@@ -5,6 +5,24 @@ class Account:
         self.full_name = full_name
         self.email = email
     
+    def to_dict(self):
+        return {
+            "type": "Account",
+            "username": self.username,
+            "password": self.password,
+            "name": self.name,
+            "email": self.email
+        }
+    
+    @staticmethod
+    def from_dict(data):
+        return Account(
+            data["username"],
+            data["password"],
+            data["name"],
+            data["email"]
+        )
+    
     def authenticate(self, username: str, password:str):
         return self.username == username and self._password == password
     
