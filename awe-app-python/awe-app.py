@@ -22,7 +22,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         account = account_manager.login(username, password)
-        if (account):
+        if (account != None):
             session['username'] = username
             return redirect(url_for('customerdashboard'))
         else:

@@ -15,14 +15,17 @@ class AccountManager:
         if not os.path.exists(self.filepath):
             return
         with open(self.filepath, "r") as f:
-            data = json.load(f)
-            for acc_dict in data:
-                if acc_dict["type"] == "Customer":
-                    self.accounts.append(Customer.from_dict(acc_dict))
-                if acc_dict["type"] == "Admin":
-                    self.accounts.append(Admin.from_dict(acc_dict))
-                else:
-                    self.accounts.append(Account.from_dict(acc_dict))
+            try:
+                data = json.load(f)
+                for acc_dict in data:
+                    if acc_dict["type"] == "Customer":
+                        self.accounts.append(Customer.from_dict(acc_dict))
+                    else:
+                        self.accounts.append(Account.from_dict(acc_dict))
+            except json.JSONDecodeError:
+                # File exists but is empty or invalid — ignore and start fresh
+                print(f"Warning: {self.filepath} is empty or corrupted. Starting with an empty account list.")
+                self.accounts = []
                     
     def save_to_file(self):
         with open(self.filepath, "w") as f:
@@ -33,6 +36,7 @@ class AccountManager:
             print(f"Username '{account.username}' already exists. Choose a different one.")
             return
         self.accounts.append(account)
+        self.save_to_file()
         
     def account_exists(self, username:str):
         
@@ -48,7 +52,8 @@ class AccountManager:
         for a in self.accounts:
             if a.username == username:
                 account = a
-        
+        if(account == None):
+            return None
         if(account.authenticate(username, password)):
             return account.username
         else:
