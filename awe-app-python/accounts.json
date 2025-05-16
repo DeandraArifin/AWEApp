@@ -1,0 +1,27 @@
+[
+    {
+        "type": "Account",
+        "username": "Dea",
+        "password": "123",
+        "name": "Deandra Arifin",
+        "email": "dea@gmail.com"
+    },
+    {
+        "type": "Customer",
+        "username": "Fawn",
+        "password": "123",
+        "name": "Fawn Pavano",
+        "email": "fpavano@gmail.com",
+        "shipping_address": "tralala",
+        "phone_number": "1234"
+    },
+    {
+        "type": "Customer",
+        "username": "haha",
+        "password": "hihi",
+        "name": "hahahihi",
+        "email": "lolzi@gmail.com",
+        "shipping_address": "cool 22",
+        "phone_number": "09191"
+    }
+]

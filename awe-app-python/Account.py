@@ -9,8 +9,8 @@ class Account:
         return {
             "type": "Account",
             "username": self.username,
-            "password": self.password,
-            "name": self.name,
+            "password": self._password,
+            "name": self.full_name,
             "email": self.email
         }
     
