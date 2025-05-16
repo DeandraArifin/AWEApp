@@ -16,7 +16,23 @@ class ShoppingCart:
     def __init__(self):
         self.id = random.randint(1, 1000)
         self.products: List[CartItem] = []
+        
+    def to_dict(self):
+        return{
+            "id": self.id,
+            "products": [item.to_dict() for item in self.products]
+        }
     
+    @staticmethod
+    def from_dict(data):
+        products_data = data.get("products", [])
+        products = [CartItem.from_dict(item) for item in products_data]
+        return ShoppingCart(
+            id = data.get("id"),
+            products = products
+            
+        )
+
     def add_product(self, product: Product, quantity: int):
         
         #check if the product is already a cart item in this cart
