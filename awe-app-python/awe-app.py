@@ -9,6 +9,8 @@ account_manager = AccountManager()
 
 myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com")
 account_manager.add_account(myaccount)
+account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
+print(account_manager.accounts)
 
 @app.route("/")
 def home():
@@ -36,10 +38,13 @@ def register():
         email = request.form['email']
         shipping_address = request.form['shipping_address']
         phone_number = request.form['phone_number']
-        account_manager.register(username, password, name, email, shipping_address, phone_number)
+        success = account_manager.register(username, password, name, email, shipping_address, phone_number)
         
-        if(account_manager.account_exists(username)):
-            return "Registration succeeded, please login"
+        if(success):
+            return 'Registration succeeded, please <a href="{}">login</a>'.format(url_for("login"))
+        else:
+            return 'Username already exists. Please <a href="{}">try again</a>.'.format(url_for("register"))
+
     return render_template('register.html')
         
 
@@ -48,3 +53,6 @@ def customerdashboard():
     if 'username' in session:
         return f"Welcome, {session['username']}!"
     return redirect(url_for('login'))
+
+if __name__ == "__main__":
+    app.run(debug=False)
