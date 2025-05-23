@@ -105,6 +105,30 @@ def add_to_cart(product_id):
     cart.add_item_quantity(product, db_session)
     
     return redirect(url_for('home'))
+
+@app.route("/checkout", methods=['GET','POST'])
+def checkout():
+    customer = None
+    if 'username' in session:
+        account = db_session.query(Account).filter_by(username=session['username']).first()
+        if account and isinstance(account, Customer):
+            customer = account
+        else:
+            customer = None
+    
+    cart = get_or_create_cart(db_session)
+    
+    if request.method=='POST':
+        full_name = request.form['fullname']
+        email = request.form['email']
+        phone_number = request.form['phone_number']
+        shipping_address = request.form['address']
+        order = cart.checkout(db_session, customer.id, full_name, email, shipping_address, phone_number)
+        
+        return "Order placed successfully! Please find an invoice to proceed with payment in your inboxes."
+    
+    return render_template('checkout.html', customer=customer, cart=cart)
+    
     
     
             

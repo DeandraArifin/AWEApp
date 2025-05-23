@@ -38,3 +38,4 @@ class AccountManager:
         new_cust_acc = Customer(username, password_hash, name, email, AccountType.CUSTOMER, shipping_address, phone_number)
         
         self.add_account(new_cust_acc)
+        return True

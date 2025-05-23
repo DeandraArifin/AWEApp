@@ -7,6 +7,10 @@
 </head>
 
 <body>
+    <nav class = "homepage">
+        <a href="{{url_for('home') }}" class="homepage-home-button">Home</a>
+        <a href="{{url_for('customerdashboard') }}" class="homepage-dashboard-button">Profile</a>
+    </nav>
     <h2>Profile</h2>
     <p>Welcome, {{customer_name}}! </p>
 

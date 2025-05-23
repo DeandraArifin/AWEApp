@@ -194,23 +194,20 @@ class ShoppingCart(Base):
     def calculate_total(self) -> float:
         return sum(item.calculate_subtotal() for item in self.items)
     
-    def checkout(self, session, full_name=None, email=None, shipping_address=None, phone_number=None):
+    def checkout(self, session, customer_id, full_name, email, shipping_address, phone_number):
         #checks if cart is empty
         if not self.items:
             raise ValueError("Cannot checkout an empty cart")
-        
-        #if customer id field is empty it indicates that it's a guest user
-        if self.customer_id:
-            customer = session.query(Customer).get(self.customer_id)
-            full_name = customer.full_name
-            email = customer.email
-        elif not full_name or not email:
+    
+        if not full_name or not email:
             raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
         
         order = Order(
-            customer_id = self.customer_id,
+            customer_id = customer_id,
             full_name = full_name,
             email = email,
+            phone_number = phone_number,
+            shipping_address = shipping_address,
             total = self.calculate_total(),
             status = OrderStatus.PENDING
         )
@@ -269,6 +266,7 @@ class Order(Base):
     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
     full_name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False)
+    phone_number = Column(Integer, nullable=False)
     shipping_address = Column(String(255), nullable=False)
     status = Column(Enum(OrderStatus), nullable=False)
     total = Column(Float, nullable=False)

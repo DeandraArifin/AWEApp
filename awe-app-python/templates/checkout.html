@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<body>
+    <h2>Checkout</h2>
+    <h3>Your Order</h3>
+    {% if cart.items %}
+      <table border="1">
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Subtotal</th>
+        </tr>
+        {% for item in cart.items %}
+          <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ "%.2f"|format(item.calculate_subtotal()) }}</td>
+          </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="2"><strong>Total</strong></td>
+          <td><strong>{{ "%.2f"|format(cart.calculate_total()) }}</strong></td>
+        </tr>
+      </table>
+    {% else %}
+      <p>Your cart is empty.</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('checkout') }}">
+        <label for="fullname">Full Name:</label>
+        <input type="text" name="fullname" value="{{customer.full_name if customer else ''}}" required><br><br>
+
+        <label for="password">Email:</label>
+        <input type="email" name="email" value="{{customer.email if customer else ''}}" required><br><br>
+
+        <label for="password">Phone Number:</label>
+        <input type="text" name="phone_number" value="{{customer.phone_number if customer else ''}}" required><br><br>
+
+        <label for="address">Shipping Address:</label>
+        <input type="text" name="address" value="{{customer.shipping_address if customer else ''}}" required><br><br>
+
+        <button type="submit">Place Order</button>
+    </form>
+
+    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+
+</body>
+</html>

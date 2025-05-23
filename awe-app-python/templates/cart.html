@@ -57,7 +57,9 @@
         <a href="{{ url_for('home') }}">Continue Shopping</a>
     </div>
 
-    <!-- <form action="{{ url_for('checkout', cart_id = )}}">
-    </form> -->
+    <form action="{{ url_for('checkout')}}" method='get'>
+        <button type="submit" class="button">Proceed to Checkout</button>
+
+    </form>
 </body>
 </html>
