@@ -1,6 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template
+from Models import Product, Customer, Account, Admin, Order, ShoppingCart
 from AccountManager import AccountManager
-from Account import Account
 
 app = Flask(__name__)
 app.secret_key = 'HELLO123'
@@ -11,6 +11,19 @@ myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com")
 account_manager.add_account(myaccount)
 account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
 print(account_manager.accounts)
+
+def get_or_create_cart(db_session):
+    if 'cart_id' in session:
+        cart = db_session.query(ShoppingCart).filter_by(id=session['cart_id']).first()
+        if cart:
+            return cart
+
+    # Create a new guest cart
+    cart = ShoppingCart()
+    db_session.add(cart)
+    db_session.commit()
+    session['cart_id'] = cart.id
+    return cart
 
 @app.route("/")
 def home():
