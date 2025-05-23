@@ -11,9 +11,9 @@ app.secret_key = 'HELLO123'
 
 account_manager = AccountManager(db_session)
 
-myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com", AccountType.CUSTOMER)
-account_manager.add_account(myaccount)
-account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
+# myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com", AccountType.CUSTOMER)
+# account_manager.add_account(myaccount)
+# account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
 
 def get_or_create_cart(db_session):
     if 'cart_id' in session:
@@ -46,6 +46,11 @@ def login():
             return "Login failed", 401
     return render_template('login.html')
 
+@app.route("/logout", methods=['POST'])
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
 @app.route("/register", methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -71,7 +76,9 @@ def customerdashboard():
         return redirect(url_for('login'))
     
     customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
-    return render_template('customerdashboard.html', customer_name=customer_acc.full_name)
+    
+    
+    return render_template('customerdashboard.html', customer = customer_acc)
 
 @app.route("/cart")
 def view_cart():

@@ -12,7 +12,37 @@
         <a href="{{url_for('customerdashboard') }}" class="homepage-dashboard-button">Profile</a>
     </nav>
     <h2>Profile</h2>
-    <p>Welcome, {{customer_name}}! </p>
+    <p>Welcome, {{customer.full_name}}! </p>
+    <h3>Your Order History</h3>
+    {% if customer.orders %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in customer.orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>${{ "%.2f"|format(order.total) }}</td>
+                        <td>{{ order.status.value }}</td>
+                        <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no previous orders.</p>
+    {% endif %}
+
+    <form action = "{{url_for('logout')}}"method = 'POST'>
+        <button type="submit">Logout</button>
+    </form>
+
 
 </body>
 </html>
