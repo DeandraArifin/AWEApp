@@ -1,9 +1,6 @@
 from enum import Enum as PyEnum
 import datetime
-import Float
-from Product import Product
-from Account import Customer
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime
+from sqlalchemy import Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 Base = declarative_base()
@@ -25,7 +22,7 @@ class CartItem(Base):
     product = relationship('Product')
     
     __table_args__ = (
-        UniqueConstraint('cart_id', 'product_id', name='unique_cart_product')
+        UniqueConstraint('cart_id', 'product_id', name='unique_cart_product'),
     )
     
     def calculate_subtotal(self) -> float:
@@ -33,110 +30,110 @@ class CartItem(Base):
         return total
     
 
-class ShoppingCart:
-    __tablename__= 'shopping_carts'
+# class ShoppingCart:
+#     __tablename__= 'shopping_carts'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
-    owner = relationship('Customer', back_populates='cart')
-    items = relationship('CartItem', back_populates='cart', cascade='all, delete-orphan')        
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
+#     owner = relationship('Customer', back_populates='cart')
+#     items = relationship('CartItem', back_populates='cart', cascade='all, delete-orphan')        
 
-    def add_product(self, product: Product, quantity: int, session: Session):
-        #check if the product is already a cart item in this cart
-        for item in self.items:
-            if item.product_id == product.id:
-                item.quantity += quantity
-                session.commit()
-            return
+#     def add_product(self, product: Product, quantity: int, session: Session):
+#         #check if the product is already a cart item in this cart
+#         for item in self.items:
+#             if item.product_id == product.id:
+#                 item.quantity += quantity
+#                 session.commit()
+#             return
         
-        #if not, then it's added as a cart item
-        self.products.append(CartItem(product.id, quantity))
+#         #if not, then it's added as a cart item
+#         self.products.append(CartItem(product.id, quantity))
     
-    def reduce_item_quantity(self, product: Product, quantity: int, session: Session):
+#     def reduce_item_quantity(self, product: Product, quantity: int, session: Session):
         
-        for item in self.items:
-            if item.product_id == product.id:
-                #if the quantity of the product in the cart is greater than the amount
-                #that the customer wants to reduce it by (e.g. remove one of 2 items)
-                if item.quantity > quantity:
-                    item.quantity -= quantity
-                else:
-                    self.items.remove(item)
-                session.commit()
-                break
+#         for item in self.items:
+#             if item.product_id == product.id:
+#                 #if the quantity of the product in the cart is greater than the amount
+#                 #that the customer wants to reduce it by (e.g. remove one of 2 items)
+#                 if item.quantity > quantity:
+#                     item.quantity -= quantity
+#                 else:
+#                     self.items.remove(item)
+#                 session.commit()
+#                 break
     
-    def calculate_total(self) -> float:
-        return sum(item.calculate_subtotal() for item in self.items)
+#     def calculate_total(self) -> float:
+#         return sum(item.calculate_subtotal() for item in self.items)
     
-    def checkout(self, session, full_name=None, email=None, shipping_address=None, phone_number=None):
-        #checks if cart is empty
-        if not self.items:
-            raise ValueError("Cannot checkout an empty cart")
+#     def checkout(self, session, full_name=None, email=None, shipping_address=None, phone_number=None):
+#         #checks if cart is empty
+#         if not self.items:
+#             raise ValueError("Cannot checkout an empty cart")
         
-        #if customer id field is empty it indicates that it's a guest user
-        if self.customer_id:
-            customer = session.query(Customer).get(self.customer_id)
-            full_name = customer.full_name
-            email = customer.email
-        elif not full_name or not email:
-            raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
+#         #if customer id field is empty it indicates that it's a guest user
+#         if self.customer_id:
+#             customer = session.query(Customer).get(self.customer_id)
+#             full_name = customer.full_name
+#             email = customer.email
+#         elif not full_name or not email:
+#             raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
         
-        order = Order(
-            customer_id = self.customer_id,
-            full_name = full_name,
-            email = email,
-            total = self.calculate_total(),
-            status = OrderStatus.PENDING
-        )
+#         order = Order(
+#             customer_id = self.customer_id,
+#             full_name = full_name,
+#             email = email,
+#             total = self.calculate_total(),
+#             status = OrderStatus.PENDING
+#         )
         
-        for item in self.items:
-            order_item = OrderItem(
-                product_id = item.product_id,
-                quantity = item.quantity,
-                price = item.calculate_subtotal()
-            )
-            order.items.append(order_item)
+#         for item in self.items:
+#             order_item = OrderItem(
+#                 product_id = item.product_id,
+#                 quantity = item.quantity,
+#                 price = item.calculate_subtotal()
+#             )
+#             order.items.append(order_item)
             
-        session.add(order)
-        session.commit()
-        return order
+#         session.add(order)
+#         session.commit()
+#         return order
 
-class OrderItem(Base):
-    __tablename__ = 'order_items'
+# class OrderItem(Base):
+#     __tablename__ = 'order_items'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    order_id = Column(Integer, ForeignKey('orders.id', nullable=False))
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
-    quantity = Column(Integer, nullable=False)
-    price = Column(Float, nullable=False)
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     order_id = Column(Integer, ForeignKey('orders.id', nullable=False))
+#     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+#     quantity = Column(Integer, nullable=False)
+#     price = Column(Float, nullable=False)
     
-    order = relationship('Order', back_populates='items')
-    product = relationship('Product')
+#     order = relationship('Order', back_populates='items')
+#     product = relationship('Product')
     
-class Order(Base):
-    __tablename__ ='orders'
+# class Order(Base):
+#     __tablename__ ='orders'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
-    full_name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False)
-    shipping_address = Column(String(255), nullable=False)
-    status = Column(Enum(OrderStatus), nullable=False)
-    total = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
+#     full_name = Column(String(255), nullable=False)
+#     email = Column(String(255), nullable=False)
+#     shipping_address = Column(String(255), nullable=False)
+#     status = Column(Enum(OrderStatus), nullable=False)
+#     total = Column(Float, nullable=False)
+#     created_at = Column(DateTime, default=datetime.utcnow)
     
-    customer = relationship('Customer', back_populates='orders')
-    items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
+#     customer = relationship('Customer', back_populates='orders')
+#     items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
     
-    def get_total_sum(self):
-        return self.total
+#     def get_total_sum(self):
+#         return self.total
     
-    def set_status(self, status: OrderStatus):
-        self.status = status
+#     def set_status(self, status: OrderStatus):
+#         self.status = status
     
     
     
-class ProductCategory(Enum):
+class ProductCategory(PyEnum):
     SMARTPHONES = "Smartphones"
     LAPTOPS = "Laptops"
     TABLETS = "Tablets"
@@ -168,7 +165,7 @@ class Product(Base):
     def set_stock(self, new_stock):
         self.stock = new_stock
         
-class ProductCatalogue(Base):
+class ProductCatalogue():
     def __init__(self, session: Session):
         self.session = session
     

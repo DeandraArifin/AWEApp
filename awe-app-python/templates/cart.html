@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Shopping Cart</title>
+    <style>
+        table { width: 60%; margin: auto; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
+        h2 { text-align: center; }
+        .btn { padding: 5px 10px; margin: 0 2px; }
+    </style>
+</head>
+<body>
+    <h2>Your Shopping Cart</h2>
+
+    {% if cart.items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart.items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>
+                        <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post" style="display:inline;">
+                            <input type="hidden" name="action" value="decrease">
+                            <button type="submit" class="btn">−</button>
+                        </form>
+                    
+                        <span style="margin: 0 10px;">{{ item.quantity }}</span>
+                    
+                        <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post" style="display:inline;">
+                            <input type="hidden" name="action" value="increase">
+                            <button type="submit" class="btn">+</button>
+                        </form>
+                    </td>
+                    <td>${{ "%.2f"|format(item.calculate_subtotal()) }}</td>
+                    
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p style="text-align: center; font-weight: bold; margin-top: 20px;">Total: ${{ "%.2f"|format(cart.calculate_total()) }}</p>
+
+    {% else %}
+        <p style="text-align: center;">Your cart is empty.</p>
+    {% endif %}
+
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('home') }}">Continue Shopping</a>
+    </div>
+
+    <!-- <form action="{{ url_for('checkout', cart_id = )}}">
+    </form> -->
+</body>
+</html>

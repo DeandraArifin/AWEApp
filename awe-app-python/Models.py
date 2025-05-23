@@ -1,14 +1,21 @@
 from enum import Enum as PyEnum
 import datetime
-import Float
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime
-from sqlalchemy.orm import declarative_base, relationship, Session
+from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime
+from sqlalchemy.orm import relationship, Session
+from urllib.parse import quote_plus
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class AccountType(Enum):
-    CUSTOMER = 'customer'
-    ADMIN = 'admin'
+original_password = '@Sunshine123'
+encoded_password = quote_plus(original_password)
+
+engine = create_engine(f'mysql+mysqlconnector://root:{encoded_password}@localhost/awe_app_db')
+
+
+class AccountType(PyEnum):
+    CUSTOMER = 'CUSTOMER'
+    ADMIN = 'ADMIN'
 
 class Account(Base):
     __tablename__ = 'accounts'
@@ -20,9 +27,15 @@ class Account(Base):
     account_type = Column(Enum(AccountType), nullable=False)
     
     __mapper_args__ = {
-        'polymorphic_on' : account_type,
-        'polymorphic_identity' : 'account'
+        'polymorphic_on' : account_type
     }
+    
+    def __init__(self, username, password_hash, full_name, email, account_type: AccountType):
+        self.username = username
+        self.password_hash = password_hash
+        self.full_name = full_name
+        self.email = email
+        self.account_type = account_type
     
     def authenticate(self, username: str, password:str):
         return self.username == username and self.password_hash == password
@@ -42,12 +55,18 @@ class Customer(Account):
     shipping_address = Column(String(255), nullable=False)
     phone_number = Column(String(10), nullable=False) #standard aussie phone number has 10 digits
     #order histoy
-    #cart
+    cart = relationship('ShoppingCart', back_populates='owner', uselist=False, cascade='all, delete-orphan')
     orders = relationship('Order', back_populates='customer')
     
     __mapper_args__ = {
-        'polymorphic_identity': 'customer'
+        'polymorphic_identity': AccountType.CUSTOMER
     }
+    
+    def __init__(self, username, password_hash, full_name, email, account_type, shipping_address, phone_number):
+        super().__init__(username, password_hash, full_name, email, AccountType.CUSTOMER)
+        self.shipping_address = shipping_address
+        self.phone_number = phone_number
+        self.cart = ShoppingCart()
     
     
     def get_order_history(self):
@@ -57,67 +76,120 @@ class Admin(Account):
     
     __tablename__ = 'admins'
     
+    __mapper_args__ = {
+        'polymorphic_identity': AccountType.ADMIN # or "admin", depending on your enum
+    }
+    
     id = Column(Integer, ForeignKey('accounts.id'), primary_key=True)
     employee_id = Column(Integer, nullable=False, unique=True)
     
     #maybe define a getter function for employee id?
 
-class OrderStatus(PyEnum):
-    PENDING = 'pending'
-    IN_PROCESS = 'in process'
-    SHIPPED = 'shipped'
-    DELIVERED = 'delivered'
-
-class CartItem(Base):
-    __tablename__ = 'cart_items'
+    
+    
+class ProductCategory(PyEnum):
+    SMARTPHONES = "Smartphones"
+    LAPTOPS = "Laptops"
+    TABLETS = "Tablets"
+    TELEVISIONS = "Televisions"
+    CAMERAS = "Cameras"
+    AUDIO = "Audio"
+    ACCESSORIES = "Accessories"
+    
+    
+class Product(Base):
+    
+    __tablename__ = 'products'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    cart_id = Column(Integer, ForeignKey('shopping_cart.id'), nullable=False)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
-    quantity = Column(Integer, nullable=False, default=1)
+    name = Column(String(255), nullable=False)
+    description = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    stock = Column(Integer, nullable=False)
+    category = Column(Enum(ProductCategory), nullable=False)
     
-    cart = relationship('ShoppingCart', back_populates='items')
-    product = relationship('Product')
+    def update_description(self, new_description):
+        if(new_description):
+            self.description = new_description
+        else:
+            raise ValueError("New description cannot be empty")
     
-    __table_args__ = (
-        UniqueConstraint('cart_id', 'product_id', name='unique_cart_product')
-    )
+    def get_stock(self):
+        return self.stock
     
-    def calculate_subtotal(self) -> float:
-        total = self.product.price * self.quantity
-        return total
+    def set_stock(self, new_stock):
+        self.stock = new_stock
+        
+class ProductCatalogue():
+    def __init__(self, session: Session):
+        self.session = session
+    
+    def get_all_products(self):
+        return self.session.query(Product).all()
+    
+    def add_product(self, product: Product):
+        self.session.add(product)
+        self.session.commit()
+        
+    def remove_product(self, product_id:int):
+        product = self.session.get(Product,product_id)
+        if(product):
+            self.session.delete(product)
+            self.session.commit()
+    
+    def search_by_category(self, category: ProductCategory):
+        return self.session.query(Product).filter_by(category=category)
+    
+    def search_by_price_range(self, min_price: float, max_price: float):
+        return self.session.query(Product).filter(
+            Product.price >= min_price,
+            Product.price <= max_price
+        ).all()
+        
+    def get_product_details(self, product_id:int):
+        product = self.session.get(Product,product_id)
+        if(product):
+            return(product.name, product.description, product.price)
+        return None
+    
+class OrderStatus(PyEnum):
+    PENDING = 'PENDING'
+    IN_PROCESS = 'IN PROCESS'
+    SHIPPED = 'SHIPPED'
+    DELIVERED = 'DELIVERED'
     
 
-class ShoppingCart:
+class ShoppingCart(Base):
     __tablename__= 'shopping_carts'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
-    owner = relationship('Customer', back_populates='cart')
-    items = relationship('CartItem', back_populates='cart', cascade='all, delete-orphan')        
-
-    def add_product(self, product: Product, quantity: int, session: Session):
+    owner = relationship('Customer', back_populates='cart', uselist=False)
+    items = relationship('CartItem', back_populates='cart', cascade='all, delete-orphan') 
+    
+    def add_item_quantity(self, product: Product, session: Session):
         #check if the product is already a cart item in this cart
         for item in self.items:
             if item.product_id == product.id:
-                item.quantity += quantity
+                item.quantity += 1
                 session.commit()
             return
         
         #if not, then it's added as a cart item
-        self.products.append(CartItem(product.id, quantity))
+        self.items.append(CartItem(self, product))
     
-    def reduce_item_quantity(self, product: Product, quantity: int, session: Session):
+    def reduce_item_quantity(self, product: Product, session: Session):
         
         for item in self.items:
             if item.product_id == product.id:
                 #if the quantity of the product in the cart is greater than the amount
                 #that the customer wants to reduce it by (e.g. remove one of 2 items)
-                if item.quantity > quantity:
-                    item.quantity -= quantity
+                if item.quantity > 1:
+                    item.quantity -= 1
                 else:
                     self.items.remove(item)
                 session.commit()
                 break
+                
     
     def calculate_total(self) -> float:
         return sum(item.calculate_subtotal() for item in self.items)
@@ -155,11 +227,34 @@ class ShoppingCart:
         session.commit()
         return order
 
+class CartItem(Base):
+    __tablename__ = 'cart_items'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cart_id = Column(Integer, ForeignKey('shopping_carts.id'), nullable=False)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    
+    cart = relationship('ShoppingCart', back_populates='items')
+    product = relationship('Product')
+    
+    __table_args__ = (
+        UniqueConstraint('cart_id', 'product_id', name='unique_cart_product'),
+    )
+    
+    def __init__(self, cart: ShoppingCart, product: Product):
+        self.cart_id = cart.id
+        self.product_id = product.id
+        self.quantity = 1
+    
+    def calculate_subtotal(self) -> float:
+        total = self.product.price * self.quantity
+        return total
+
 class OrderItem(Base):
     __tablename__ = 'order_items'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    order_id = Column(Integer, ForeignKey('orders.id', nullable=False))
+    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
@@ -177,7 +272,7 @@ class Order(Base):
     shipping_address = Column(String(255), nullable=False)
     status = Column(Enum(OrderStatus), nullable=False)
     total = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     customer = relationship('Customer', back_populates='orders')
     items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
@@ -187,69 +282,3 @@ class Order(Base):
     
     def set_status(self, status: OrderStatus):
         self.status = status
-    
-    
-    
-class ProductCategory(Enum):
-    SMARTPHONES = "Smartphones"
-    LAPTOPS = "Laptops"
-    TABLETS = "Tablets"
-    TELEVISIONS = "Televisions"
-    CAMERAS = "Cameras"
-    AUDIO = "Audio"
-    ACCESSORIES = "Accessories"
-    
-    
-class Product(Base):
-    
-    __tablename__ = 'products'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    description = Column(String, nullable=False)
-    price = Column(Float, nullable=False)
-    stock = Column(Integer, nullable=False)
-    category = Column(Enum(ProductCategory), nullable=False)
-    
-    def update_description(self, new_description):
-        if(new_description):
-            self.description = new_description
-        else:
-            raise ValueError("New description cannot be empty")
-    
-    def get_stock(self):
-        return self.stock
-    
-    def set_stock(self, new_stock):
-        self.stock = new_stock
-        
-class ProductCatalogue(Base):
-    def __init__(self, session: Session):
-        self.session = session
-    
-    def get_all_products(self):
-        return self.session.query(Product).all()
-    
-    def add_product(self, product: Product):
-        self.session.add(product)
-        self.session.commit()
-        
-    def remove_product(self, product_id:int):
-        product = self.session.get(Product,product_id)
-        if(product):
-            self.session.delete(product)
-            self.session.commit()
-    
-    def search_by_category(self, category: ProductCategory):
-        return self.session.query(Product).filter_by(category=category)
-    
-    def search_by_price_range(self, min_price: float, max_price: float):
-        return self.session.query(Product).filter(
-            Product.price >= min_price,
-            Product.price <= max_price
-        ).all()
-        
-    def get_product_details(self, product_id:int):
-        product = self.session.get(Product,product_id)
-        if(product):
-            return(product.name, product.description, product.price)
-        return None

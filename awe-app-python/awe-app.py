@@ -1,16 +1,19 @@
 from flask import Flask, session, request, redirect, url_for, render_template
-from Models import Product, Customer, Account, Admin, Order, ShoppingCart
+from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem
 from AccountManager import AccountManager
+from sqlalchemy.orm import sessionmaker
+
+Session = sessionmaker(bind=engine)
+db_session = Session()
 
 app = Flask(__name__)
 app.secret_key = 'HELLO123'
 
-account_manager = AccountManager()
+account_manager = AccountManager(db_session)
 
-myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com")
+myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com", AccountType.CUSTOMER)
 account_manager.add_account(myaccount)
 account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
-print(account_manager.accounts)
 
 def get_or_create_cart(db_session):
     if 'cart_id' in session:
@@ -27,7 +30,8 @@ def get_or_create_cart(db_session):
 
 @app.route("/")
 def home():
-    return render_template('home.html')
+    products = db_session.query(Product).all()
+    return render_template('home.html', products=products)
 
 @app.route("/login", methods=['GET','POST'])
 def login():
@@ -63,9 +67,46 @@ def register():
 
 @app.route("/customerdashboard")
 def customerdashboard():
-    if 'username' in session:
-        return f"Welcome, {session['username']}!"
-    return redirect(url_for('login'))
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
+    return render_template('customerdashboard.html', customer_name=customer_acc.full_name)
 
+@app.route("/cart")
+def view_cart():
+    cart = get_or_create_cart(db_session)
+    return render_template('cart.html', cart=cart)
+
+@app.route("/update_cart/<int:item_id>", methods=['POST'])
+def update_cart(item_id):
+    action = request.form.get('action')
+    cart_item = db_session.query(CartItem).filter_by(id=item_id).first()
+    cart = get_or_create_cart(db_session)
+    
+    if cart_item:
+        if action == 'increase':
+            cart.add_item_quantity(cart_item, db_session)
+        elif action == 'decrease':
+            cart.reduce_item_quantity(cart_item, db_session)
+            
+    return redirect(url_for('view_cart'))
+
+@app.route("/add_to_cart/<int:product_id>", methods=['POST'])
+def add_to_cart(product_id):
+    quantity = int(request.form.get("quantity", 1))
+    
+    product = db_session.query(Product).get(product_id)
+    if not product:
+        return "Product not found"
+    
+    cart = get_or_create_cart(db_session)
+    
+    cart.add_item_quantity(product, db_session)
+    
+    return redirect(url_for('home'))
+    
+    
+            
 if __name__ == "__main__":
     app.run(debug=False)

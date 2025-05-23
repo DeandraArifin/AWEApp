@@ -2,13 +2,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- add stylesheet -->
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <head>
+        <title>Home</title>
+    </head>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+        <h1>My Shop</h1>
+        <a href="{{ url_for('view_cart') }}" style="text-decoration: none; color: black;">
+            <i class="fas fa-shopping-cart"></i> Cart
+        </a>
+    </header>
     <body>
         <nav class = "homepage">
             <a href="{{url_for('home') }}" class="homepage-home-button">Home</a>
             <a href="{{url_for('login') }}" class="homepage-login-button">Login</a>
         </nav>
         <h3>Welcome to the home page</h3>
+
+        <h4>Product Catalogue</h4>
+        <ul>
+            {% for product in products %}
+                <li>
+                    <strong>{{product.name}}</strong><br>
+                    {{product.description}}<br>
+                    Price: ${{ product.price }}
+
+                    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="number" name="quantity" value="1" min="1" style="width: 50px;">
+                        <button type="submit">Add to Cart 🛒</button>
+                      </form>
+                
+                </li>
+            {% else %}
+            </li>No products available</li>
+            {% endfor %}
+        </ul>
 
     </body>
 </html>
