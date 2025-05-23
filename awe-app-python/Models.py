@@ -223,6 +223,14 @@ class ShoppingCart(Base):
         session.add(order)
         session.commit()
         return order
+    
+    def empty_cart(self, session):
+        
+        for item in self.items[:]:
+            session.delete(item)
+            
+        self.items.clear()
+        session.commit()
 
 class CartItem(Base):
     __tablename__ = 'cart_items'

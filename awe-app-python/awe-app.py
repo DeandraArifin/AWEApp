@@ -124,8 +124,10 @@ def checkout():
         phone_number = request.form['phone_number']
         shipping_address = request.form['address']
         order = cart.checkout(db_session, customer.id, full_name, email, shipping_address, phone_number)
+        cart.empty_cart(db_session)
         
         return "Order placed successfully! Please find an invoice to proceed with payment in your inboxes."
+
     
     return render_template('checkout.html', customer=customer, cart=cart)
     
