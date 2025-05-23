@@ -283,8 +283,80 @@ class Order(Base):
     customer = relationship('Customer', back_populates='orders')
     items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
     
+    def __init__(self):
+        self.status = OrderStatus.PENDING
+        self._observers = []
+        
+    def attach(self, observer):
+        self._observers.append(observer)
+        
     def get_total_sum(self):
         return self.total
     
-    def set_status(self, status: OrderStatus):
-        self.status = status
+    def set_status(self, new_status: OrderStatus, db_session):
+        old_status = self.status
+        self.status = new_status
+        db_session.commit()
+        
+        self.notify(old_status, new_status, db_session)
+        
+    def notify(self, old_status, new_status, db_session):
+        for observer in self._observers:
+            observer.update(self, old_status, new_status, db_session)
+        
+class Invoice(Base):
+    __tablename__ = 'invoices'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
+    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
+    email = Column(String(255), ForeignKey('orders.email'), nullable=False)
+    total = Column(Integer, ForeignKey("orders.total"), nullable=False)
+    
+    #add functionality to generate and email receipts to customers
+    
+class PaymentMethod(PyEnum):
+    CREDITCARD = 'CREDITCARD'
+    BANKTRANSFER = 'BANKTRANSFER'
+
+class Receipt(Base):
+    __tablename__ = 'receipts'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
+    # payment_id = Column(Integer, ForeignKey('payments.id'), nullable=False)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
+    payment_method = Column(Enum(PaymentMethod), nullable=False)
+    
+    #assumes that receipt is auto-generated upon payment, therefore the current date and time is used
+    payment_dt = Column(DateTime, default=datetime.datetime.utcnow)
+    
+        
+class OrderObserver:
+    def update(self, db_session, order, old_status, new_status):
+        raise NotImplementedError
+
+#concrete observers   
+class InvoiceCreator(OrderObserver):
+    def update(self, order, old_status, new_status, db_session):
+        if new_status == 'PENDING':
+            print(f"Creating invoice for Order #{order.id}")
+            
+        customer_id = order.customer_id
+        
+        invoice = Invoice(customer_id = customer_id, order_id = order.id, email = order.email, total = order.total)
+        db_session.add(invoice)
+        db_session.commit()
+        
+#decide how to work out the receipt creator later, because don't know if we're going to use a payments table
+# class ReceiptCreator(OrderObserver):
+#     def update(self, order, old_status, new_status, db_session):
+#         if new_status == 'IN PROCESS':
+#             print(f"Creating receipt for Order #{order.id}")
+        
+#         customer_id = order.customer_id
+        
+#         receipt = Receipt(order_id = order.id, payment_id)
+        
+            
+            
+            
