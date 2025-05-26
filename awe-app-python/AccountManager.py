@@ -27,6 +27,8 @@ class AccountManager:
             return account
         
         return None
+    
+    #can be combined into one, fix later
         
     def register(self, username, password, name, email, shipping_address, phone_number):
         
