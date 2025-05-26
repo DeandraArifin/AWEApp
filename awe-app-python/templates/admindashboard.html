@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Dashboard</title>
+</head>
+
+<body>
+    <nav class = "homepage">
+        <a href="{{url_for('home') }}" class="homepage-home-button">Home</a>
+    </nav>
+    <h2>Profile</h2>
+    <p>Welcome, {{admin.full_name}}! </p>
+    
+    <form action = "{{url_for('logout')}}"method = 'POST'>
+        <button type="submit">Logout</button>
+    </form>
+
+
+</body>
+</html>

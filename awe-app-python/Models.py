@@ -76,13 +76,18 @@ class Admin(Account):
     
     __tablename__ = 'admins'
     
+    id = Column(Integer, ForeignKey('accounts.id'), primary_key=True)
+    employee_id = Column(Integer, nullable=False, unique=True)
+    
     __mapper_args__ = {
         'polymorphic_identity': AccountType.ADMIN # or "admin", depending on your enum
     }
     
-    id = Column(Integer, ForeignKey('accounts.id'), primary_key=True)
-    employee_id = Column(Integer, nullable=False, unique=True)
     
+    def __init__(self, username, password_hash, full_name, email, account_type, employee_id):
+        super().__init__(username, password_hash, full_name, email, account_type)
+        self.employee_id = employee_id
+        
     #maybe define a getter function for employee id?
 
     

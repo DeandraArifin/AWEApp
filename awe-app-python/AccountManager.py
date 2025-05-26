@@ -39,3 +39,13 @@ class AccountManager:
         
         self.add_account(new_cust_acc)
         return True
+    
+    def register_admin(self, username, password, name, email, account_type, employee_id):
+        if self.account_exists(username):
+            print(f"Username '{username}' already exists. Registration aborted.")
+            return False
+        
+        password_hash = generate_password_hash(password)
+        new_admin_acc = Admin(username, password_hash, name, email, account_type, employee_id)
+        self.add_account(new_admin_acc)
+        return True

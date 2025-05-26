@@ -1,7 +1,9 @@
 from flask import Flask, session, request, redirect, url_for, render_template
+from matplotlib.animation import subprocess_creation_flags
 from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import and_
 
 Session = sessionmaker(bind=engine)
 db_session = Session()
@@ -10,6 +12,10 @@ app = Flask(__name__)
 app.secret_key = 'HELLO123'
 
 account_manager = AccountManager(db_session)
+
+admin_acc = Admin('CillianM', '123', 'Cillian Murphy', 'cillianm@gmail.com', AccountType.ADMIN, 120001)
+account_manager.register_admin('CillianM', '123', 'Cillian Murphy', 'cillianm@gmail.com', AccountType.ADMIN, 120001)
+print(admin_acc.employee_id)
 
 # myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com", AccountType.CUSTOMER)
 # account_manager.add_account(myaccount)
@@ -39,9 +45,14 @@ def login():
         username = request.form['username']
         password = request.form['password']
         account = account_manager.login(username, password)
-        if (account != None):
+        
+        if (account != None and isinstance(account, Customer)):
             session['username'] = username
             return redirect(url_for('customerdashboard'))
+        
+        elif (account != None and isinstance(account, Admin)):
+            session['username'] = username
+            return redirect(url_for('admindashboard'))
         else:
             return "Login failed", 401
     return render_template('login.html')
@@ -79,6 +90,21 @@ def customerdashboard():
     
     
     return render_template('customerdashboard.html', customer = customer_acc)
+
+@app.route("/admindashboard")
+def admindashboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    # admin_acc = db_session.query(Account).filter(
+    #     and_(
+    #         Account.username == session['username'],
+    #         Account.account_type == 'ADMIN')
+    #     ).first()
+    admin_acc = db_session.query(Account).filter_by(username=session['username']).first()
+
+    
+    return render_template('admindashboard.html', admin = admin_acc)
 
 @app.route("/cart")
 def view_cart():
