@@ -1,6 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template
 from matplotlib.animation import subprocess_creation_flags
-from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem
+from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
@@ -96,15 +96,25 @@ def admindashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # admin_acc = db_session.query(Account).filter(
-    #     and_(
-    #         Account.username == session['username'],
-    #         Account.account_type == 'ADMIN')
-    #     ).first()
+    admin_acc = db_session.query(Account).filter(
+        and_(
+            Account.username == session['username'],
+            Account.account_type == 'ADMIN')
+        ).first()
+    
     admin_acc = db_session.query(Account).filter_by(username=session['username']).first()
 
-    
     return render_template('admindashboard.html', admin = admin_acc)
+
+@app.route("/ordermanager", methods=['POST', 'GET'])
+def ordermanager():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    orders = db_session.query(Order).all()
+    
+    return render_template('ordermanager.html', orders=orders, order_status = OrderStatus)
+    
 
 @app.route("/cart")
 def view_cart():

@@ -224,8 +224,14 @@ class ShoppingCart(Base):
                 price = item.calculate_subtotal()
             )
             order.items.append(order_item)
-            
         session.add(order)
+        session.flush() #ensures order id is created
+        
+        order_subject = OrderSubject(order)
+        order_subject.attach(InvoiceCreator())
+        order_subject.set_status(OrderStatus.PENDING, session)
+            
+        
         session.commit()
         return order
     
@@ -288,26 +294,17 @@ class Order(Base):
     customer = relationship('Customer', back_populates='orders')
     items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
     
-    def __init__(self):
-        self.status = OrderStatus.PENDING
-        self._observers = []
-        
-    def attach(self, observer):
-        self._observers.append(observer)
+    def __init__(self, customer_id, full_name, email, phone_number, shipping_address, status, total):
+        self.customer_id = customer_id
+        self.full_name = full_name
+        self.email = email
+        self.phone_number = phone_number
+        self.shipping_address = shipping_address
+        self.status = status
+        self.total = total
         
     def get_total_sum(self):
         return self.total
-    
-    def set_status(self, new_status: OrderStatus, db_session):
-        old_status = self.status
-        self.status = new_status
-        db_session.commit()
-        
-        self.notify(old_status, new_status, db_session)
-        
-    def notify(self, old_status, new_status, db_session):
-        for observer in self._observers:
-            observer.update(self, old_status, new_status, db_session)
         
 class Invoice(Base):
     __tablename__ = 'invoices'
@@ -315,8 +312,8 @@ class Invoice(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    email = Column(String(255), ForeignKey('orders.email'), nullable=False)
-    total = Column(Integer, ForeignKey("orders.total"), nullable=False)
+    email = Column(String(255), nullable=False)
+    total = Column(Integer, nullable=False)
     
     #add functionality to generate and email receipts to customers
     
@@ -335,9 +332,26 @@ class Receipt(Base):
     #assumes that receipt is auto-generated upon payment, therefore the current date and time is used
     payment_dt = Column(DateTime, default=datetime.datetime.utcnow)
     
+class OrderSubject:
+    def __init__(self, order):
+        self.order = order
+        self._observers = []
+        
+    def attach(self, observer):
+        self._observers.append(observer)
+    
+    def set_status(self, new_status, db_session):
+        old_status = self.order.status
+        self.order.status = new_status
+        db_session.commit()
+        self.notify(old_status, new_status, db_session)
+        
+    def notify(self, old_status, new_status, db_session):
+        for observer in self._observers:
+            observer.update(self.order, old_status, new_status, db_session)
         
 class OrderObserver:
-    def update(self, db_session, order, old_status, new_status):
+    def update(self, order, old_status, new_status, db_session):
         raise NotImplementedError
 
 #concrete observers   

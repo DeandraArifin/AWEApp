@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Dashboard</title>
+</head>
+
+<body>
+    <nav class = "homepage">
+        <a href="{{url_for('home') }}" class="homepage-home-button">Home</a>
+    </nav>
+    <h3>Manage orders here</h3>
+    {% if orders %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Order Status</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>
+                            {% if order.customer %}
+                                {{order.customer.full_name}}
+                            {% else %}
+                                Guest
+                            {% endif %}
+                        </td>
+                        <td>${{ "%.2f"|format(order.total) }}</td>
+                        <td align='center'>
+                            <select name='status_{{order.id}}'>
+                                {% for status in order_status %}
+                                <option value = '{{status.value}}' {% if status == order.status %}selected{% endif %}>{{status.value}}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>{{ order.status.value }}</td>
+                        <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method='POST' action="{{url_for('ordermanager')}}">
+            <button type='submit'>Update</button>
+        </form>
+    {% else %}
+        <p>No orders found in the database.</p>
+    {% endif %}
+
+
+</body>
+</html>

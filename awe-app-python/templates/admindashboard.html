@@ -13,6 +13,8 @@
     <h2>Profile</h2>
     <p>Welcome, {{admin.full_name}}! </p>
     
+    <a href="{{url_for('ordermanager')}}" method = 'POST'>Manage Orders</a>
+
     <form action = "{{url_for('logout')}}"method = 'POST'>
         <button type="submit">Logout</button>
     </form>
