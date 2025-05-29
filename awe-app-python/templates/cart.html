@@ -1,65 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Your Shopping Cart</title>
-    <style>
-        table { width: 60%; margin: auto; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
-        h2 { text-align: center; }
-        .btn { padding: 5px 10px; margin: 0 2px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
-    <h2>Your Shopping Cart</h2>
 
-    {% if cart.items %}
-    <table>
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart.items %}
-                <tr>
-                    <td>{{ item.product.name }}</td>
-                    <td>
-                        <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post" style="display:inline;">
-                            <input type="hidden" name="action" value="decrease">
-                            <button type="submit" class="btn">−</button>
-                        </form>
-                    
-                        <span style="margin: 0 10px;">{{ item.quantity }}</span>
-                    
-                        <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post" style="display:inline;">
-                            <input type="hidden" name="action" value="increase">
-                            <button type="submit" class="btn">+</button>
-                        </form>
-                    </td>
-                    <td>${{ "%.2f"|format(item.calculate_subtotal()) }}</td>
-                    
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<body class="bg-light">
 
-    <p style="text-align: center; font-weight: bold; margin-top: 20px;">Total: ${{ "%.2f"|format(cart.calculate_total()) }}</p>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="./home.html">🛍️ My Shop</a>
+            <div>
+                <a href="./cart.html" class="btn btn-outline-dark me-2">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                </a>
+                <a href="./login.html" class="btn btn-primary">Login</a>
+            </div>
+        </div>
+    </nav>
 
-    {% else %}
-        <p style="text-align: center;">Your cart is empty.</p>
-    {% endif %}
+    <!-- Cart Content -->
+    <div class="container mt-5">
+        <div class="card shadow-sm p-4">
+            <h2 class="text-center mb-4">Your Shopping Cart</h2>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="{{ url_for('home') }}">Continue Shopping</a>
+            {% if cart.items %}
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart.items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ "%.2f"|format(item.calculate_subtotal()) }}</td>
+                            <td>
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post"
+                                        class="me-1">
+                                        <input type="hidden" name="action" value="decrease">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">−</button>
+                                    </form>
+
+                                    <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post"
+                                        class="ms-1">
+                                        <input type="hidden" name="action" value="increase">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">+</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-center fw-bold mt-3">
+                Total: ${{ "%.2f"|format(cart.calculate_total()) }}
+            </p>
+
+            <div class="text-center mt-3">
+                <a href="{{ url_for('home') }}" class="btn btn-outline-primary me-2">Continue Shopping</a>
+                <form action="{{ url_for('checkout') }}" method="get" class="d-inline">
+                    <button type="submit" class="btn btn-success">Proceed to Checkout</button>
+                </form>
+            </div>
+
+            {% else %}
+            <p class="text-center text-muted">Your cart is empty.</p>
+            {% endif %}
+        </div>
     </div>
 
-    <form action="{{ url_for('checkout')}}" method='get'>
-        <button type="submit" class="button">Proceed to Checkout</button>
-
-    </form>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+        crossorigin="anonymous"></script>
 </body>
+
 </html>
