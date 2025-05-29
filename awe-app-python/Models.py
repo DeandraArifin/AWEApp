@@ -161,7 +161,17 @@ class OrderStatus(PyEnum):
     IN_PROCESS = 'IN PROCESS'
     SHIPPED = 'SHIPPED'
     DELIVERED = 'DELIVERED'
+
+class CartDecorator:
+    def __init__(self, cart):
+        self._cart = cart
     
+    def get_total(self):
+        return self._cart.calculate_total()
+
+class TaxDecorator(CartDecorator):
+    def get_total(self):
+        return self._cart.calculate_total() * 1.1 #assumes 10% tax
 
 class ShoppingCart(Base):
     __tablename__= 'shopping_carts'
@@ -207,13 +217,16 @@ class ShoppingCart(Base):
         if not full_name or not email:
             raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
         
+        taxed_cart = TaxDecorator(self)
+        taxed_total = taxed_cart.get_total()
+        
         order = Order(
             customer_id = customer_id,
             full_name = full_name,
             email = email,
             phone_number = phone_number,
             shipping_address = shipping_address,
-            total = self.calculate_total(),
+            total = taxed_total,
             status = OrderStatus.PENDING
         )
         
