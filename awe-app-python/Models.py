@@ -1,6 +1,6 @@
 from enum import Enum as PyEnum
 import datetime
-from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime
+from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime, Boolean
 from sqlalchemy.orm import relationship, Session
 from urllib.parse import quote_plus
 from sqlalchemy.ext.declarative import declarative_base
@@ -89,9 +89,7 @@ class Admin(Account):
         self.employee_id = employee_id
         
     #maybe define a getter function for employee id?
-
-    
-    
+ 
 class ProductCategory(PyEnum):
     SMARTPHONES = "Smartphones"
     LAPTOPS = "Laptops"
@@ -101,7 +99,17 @@ class ProductCategory(PyEnum):
     AUDIO = "Audio"
     ACCESSORIES = "Accessories"
     
+class ProductDecorator:
+    def __init__(self, product):
+        self._product = product
     
+    def get_price(self):
+        return self._product.price
+        
+# class SaleDecorator(ProductDecorator):
+#     def get_price(self):
+        
+
 class Product(Base):
     
     __tablename__ = 'products'
@@ -111,6 +119,8 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, nullable=False)
     category = Column(Enum(ProductCategory), nullable=False)
+    on_sale = Column(Boolean, default=False, nullable=False )
+    discount_percentage = Column(Integer, nullable=True, default=0)
     
     def update_description(self, new_description):
         if(new_description):
