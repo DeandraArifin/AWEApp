@@ -34,6 +34,28 @@
         <h3 class="text-center mb-4">Welcome to the Home Page</h3>
         <h4 class="mb-3">Product Catalogue</h4>
 
+        <form method="GET" class="mb-4">
+            <div class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label for="category" class="col-form-label">Filter by Category:</label>
+                </div>
+                <div class="col-auto">
+                    <select id="category" name="category" class="form-select">
+                        <option value="">All</option>
+                        {% for cat in ProductCategory %}
+                        <option value="{{ cat.name }}" {% if cat.name == request.args.get('category') %}selected{% endif %}>
+                            {{ cat.name.capitalize() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">Filter</button>
+                </div>
+            </div>
+        </form>
+        
+
         {% if products %}
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for product in products %}

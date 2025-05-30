@@ -1,6 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template
 from matplotlib.animation import subprocess_creation_flags
-from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus
+from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
@@ -36,8 +36,14 @@ def get_or_create_cart(db_session):
 
 @app.route("/")
 def home():
-    products = db_session.query(Product).all()
-    return render_template('home.html', products=products)
+    category = request.args.get('category')
+    if category and category in ProductCategory.__members__:
+        filtered_products = db_session.query(Product).filter_by(category=ProductCategory[category]).all()
+    else:
+        filtered_products = db_session.query(Product).all()
+    
+    return render_template('home.html', products=filtered_products, ProductCategory=ProductCategory, request=request)
+
 
 @app.route("/login", methods=['GET','POST'])
 def login():
