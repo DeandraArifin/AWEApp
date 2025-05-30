@@ -106,8 +106,13 @@ class ProductDecorator:
     def get_price(self):
         return self._product.price
         
-# class SaleDecorator(ProductDecorator):
-#     def get_price(self):
+class SaleDecorator(ProductDecorator):
+    def get_price(self, discount_percentage, session):
+        
+        self._product.price = self._product.price * (1-discount_percentage /100)
+        session.commit()
+        
+        return self._product.price
         
 
 class Product(Base):
