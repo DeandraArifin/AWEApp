@@ -1,5 +1,6 @@
 from enum import Enum as PyEnum
 import datetime
+from sre_constants import CATEGORY_LINEBREAK
 from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime, Boolean
 from sqlalchemy.orm import relationship, Session
 from urllib.parse import quote_plus
@@ -422,6 +423,62 @@ class ReceiptCreator(OrderObserver):
         
         db_session.add(receipt)
         db_session.commit()
+        
+        
+class ProductManager:
+    def __init__(self, admin, catalogue):
+        if not isinstance(admin, Admin):
+            raise ValueError("Only admins can manage products")
+        
+        self.admin = admin
+        self.catalogue = catalogue
+    
+    def add_product(self, name, description, price, stock, category, on_sale, discount_percentage):
+        
+        product = Product(name, description, price, stock, category, on_sale, discount_percentage)
+        self.catalogue.add_product(product)
+        
+        return product
+    
+    def remove_product(self, product_id, session):
+        product = session.query(Product).get(product_id)
+        
+        if product:
+            session.delete(product)
+            session.commit()
+            return True
+        
+        return False
+    
+    def modify_product(self, session, product_id, name=None, description=None, price=None, stock=None, category=None, on_sale=None, discount_percentage=None):
+        product = session.query(Product).get(product_id)
+        
+        if not product:
+            return None
+        
+        if name:
+            product.name = name
+        if description:
+            product.description = description
+        if price:
+            product.price = price
+        if stock:
+            product.stock = stock
+        if category:
+            product.category = category
+        if on_sale:
+            product.on_sale = on_sale
+        if discount_percentage:
+            product.discount_percentage = discount_percentage
+            sale_decorator = SaleDecorator()
+            discounted_price = sale_decorator.get_price(discount_percentage, session)
+            product.price = discounted_price
+            
+        session.commit()
+        return product
+        
+
+
         
             
             
