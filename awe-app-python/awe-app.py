@@ -118,8 +118,19 @@ def ordermanager():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    orders = db_session.query(Order).all()
+    if request.method == 'POST':
+        orders = db_session.query(Order).all()
+        for order in orders:
+            key = f"status_{order.id}"
+            new_status = request.form.get(key)
+            print(new_status)
+            
+            if new_status and new_status != order.status:
+                order.status= OrderStatus[new_status]
+        
+        db_session.commit()
     
+    orders = db_session.query(Order).all()
     return render_template('ordermanager.html', orders=orders, order_status = OrderStatus)
     
 

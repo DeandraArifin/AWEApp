@@ -174,7 +174,7 @@ class ProductCatalogue():
     
 class OrderStatus(PyEnum):
     PENDING = 'PENDING'
-    IN_PROCESS = 'IN PROCESS'
+    PROCESSING = 'PROCESSING'
     SHIPPED = 'SHIPPED'
     DELIVERED = 'DELIVERED'
 
@@ -357,9 +357,9 @@ class Receipt(Base):
     # payment_id = Column(Integer, ForeignKey('payments.id'), nullable=False)
     customer_id = Column(Integer, ForeignKey('customers.id'), nullable=True)
     payment_method = Column(Enum(PaymentMethod), nullable=False)
-    
     #assumes that receipt is auto-generated upon payment, therefore the current date and time is used
     payment_dt = Column(DateTime, default=datetime.datetime.utcnow)
+    total = Column(Float, nullable=False)
     
 class Payment(Base):
     __tablename__ = 'payments'
@@ -377,7 +377,7 @@ class Payment(Base):
         
         subject = OrderSubject(self.order)
         subject.attach(ReceiptCreator())
-        subject.set_status("IN PROCESS", session)
+        subject.set_status("PROCESSING", session)
             
 class OrderSubject:
     def __init__(self, order):
@@ -398,7 +398,7 @@ class OrderSubject:
             observer.update(self.order, old_status, new_status, db_session, payment)
         
 class OrderObserver:
-    def update(self, order, old_status, new_status, db_session):
+    def update(self, order, old_status, new_status, db_session, payment):
         raise NotImplementedError
 
 #concrete observers   
@@ -416,7 +416,7 @@ class InvoiceCreator(OrderObserver):
 # decide how to work out the receipt creator later, because don't know if we're going to use a payments table
 class ReceiptCreator(OrderObserver):
     def update(self, order, old_status, new_status, db_session, payment):
-        if new_status == 'IN PROCESS':
+        if new_status == 'PROCESSING':
             print(f"Creating receipt for Order #{order.id}")
         
         receipt = Receipt(order_id = order.id, customer_id = order.customer_id, payment_method= payment.payment_method, total = payment.total)
@@ -470,7 +470,7 @@ class ProductManager:
             product.on_sale = on_sale
         if discount_percentage:
             product.discount_percentage = discount_percentage
-            sale_decorator = SaleDecorator()
+            sale_decorator = SaleDecorator(product)
             discounted_price = sale_decorator.get_price(discount_percentage, session)
             product.price = discounted_price
             

@@ -35,48 +35,47 @@
             <h3 class="mb-4">Manage Orders</h3>
 
             {% if orders %}
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Total</th>
-                            <th>Change Status</th>
-                            <th>Current Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in orders %}
-                        <tr>
-                            <td>{{ order.id }}</td>
-                            <td>
-                                {% if order.customer %}
-                                {{ order.customer.full_name }}
-                                {% else %}
-                                Guest
-                                {% endif %}
-                            </td>
-                            <td>${{ "%.2f"|format(order.total) }}</td>
-                            <td>
-                                <select class="form-select" name="status_{{ order.id }}">
-                                    {% for status in order_status %}
-                                    <option value="{{ status.value }}" {% if status==order.status %}selected{% endif %}>
-                                        {{ status.value }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td>{{ order.status.value }}</td>
-                            <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
             <form method="POST" action="{{ url_for('ordermanager') }}">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Change Status</th>
+                                <th>Current Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>
+                                    {% if order.customer %}
+                                    {{ order.customer.full_name }}
+                                    {% else %}
+                                    Guest
+                                    {% endif %}
+                                </td>
+                                <td>${{ "%.2f"|format(order.total) }}</td>
+                                <td>
+                                    <select class="form-select" name="status_{{ order.id }}">
+                                        {% for status in order_status %}
+                                        <option value="{{ status.name }}" {% if status==order.status %}selected{% endif %}>
+                                            {{ status.value }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>{{ order.status.value }}</td>
+                                <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-success mt-3">Update Orders</button>
                 </div>
