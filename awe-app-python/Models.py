@@ -10,7 +10,7 @@ Base = declarative_base()
 original_password = '@Sunshine123'
 encoded_password = quote_plus(original_password)
 
-engine = create_engine(f'mysql+mysqlconnector://root:{encoded_password}@localhost/awe_app_db')
+engine = create_engine(f'mysql+mysqlconnector://admin:Sunshine123@awe-app-db.cxm864cy2rlj.ap-southeast-2.rds.amazonaws.com:3306/awe_app')
 
 
 class AccountType(PyEnum):
@@ -20,9 +20,9 @@ class AccountType(PyEnum):
 class Account(Base):
     __tablename__ = 'accounts'
     id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    full_name = Column(String(100), nullable=False)
+    full_name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False)
     account_type = Column(Enum(AccountType), nullable=False)
     
@@ -91,13 +91,13 @@ class Admin(Account):
     #maybe define a getter function for employee id?
  
 class ProductCategory(PyEnum):
-    SMARTPHONES = "Smartphones"
-    LAPTOPS = "Laptops"
-    TABLETS = "Tablets"
-    TELEVISIONS = "Televisions"
-    CAMERAS = "Cameras"
-    AUDIO = "Audio"
-    ACCESSORIES = "Accessories"
+    SMARTPHONES = "SMARTPHONES"
+    LAPTOPS = "LAPTOPS"
+    TABLETS = "TABLETS"
+    TELEVISIONS = "TELEVISIONS"
+    CAMERAS = "CAMERAS"
+    AUDIO = "AUDIO"
+    ACCESSORIES = "ACCESSORIES"
     
 class ProductDecorator:
     def __init__(self, product):
