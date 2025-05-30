@@ -157,7 +157,7 @@ class ProductCatalogue():
             self.session.commit()
     
     def search_by_category(self, category: ProductCategory):
-        return self.session.query(Product).filter_by(category=category)
+        return self.session.query(Product).filter_by(category=ProductCategory[category]).all()
     
     def search_by_price_range(self, min_price: float, max_price: float):
         return self.session.query(Product).filter(
@@ -202,7 +202,7 @@ class ShoppingCart(Base):
             if item.product_id == product.id:
                 item.quantity += 1
                 session.commit()
-            return
+                return
         
         #if not, then it's added as a cart item
         self.items.append(CartItem(self, product))
@@ -390,11 +390,11 @@ class OrderSubject:
         old_status = self.order.status
         self.order.status = new_status
         db_session.commit()
-        self.notify(old_status, new_status, db_session)
+        self.notify(old_status, new_status, db_session, None)
         
     def notify(self, old_status, new_status, db_session, payment):
         for observer in self._observers:
-            observer.update(self.order, old_status, new_status, db_session)
+            observer.update(self.order, old_status, new_status, db_session, payment)
         
 class OrderObserver:
     def update(self, order, old_status, new_status, db_session):

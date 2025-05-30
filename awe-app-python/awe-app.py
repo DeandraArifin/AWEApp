@@ -1,6 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template
 from matplotlib.animation import subprocess_creation_flags
-from Models import engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory
+from Models import ProductCatalogue, engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
@@ -37,10 +37,11 @@ def get_or_create_cart(db_session):
 @app.route("/")
 def home():
     category = request.args.get('category')
+    catalogue = ProductCatalogue(db_session)
     if category and category in ProductCategory.__members__:
-        filtered_products = db_session.query(Product).filter_by(category=ProductCategory[category]).all()
+        filtered_products = catalogue.search_by_category(category)
     else:
-        filtered_products = db_session.query(Product).all()
+        filtered_products = catalogue.get_all_products()
     
     return render_template('home.html', products=filtered_products, ProductCategory=ProductCategory, request=request)
 
@@ -172,7 +173,7 @@ def checkout():
         email = request.form['email']
         phone_number = request.form['phone_number']
         shipping_address = request.form['address']
-        order = cart.checkout(db_session, customer.id, full_name, email, shipping_address, phone_number)
+        order = cart.checkout(db_session, customer.id if customer else None, full_name, email, shipping_address, phone_number)
         cart.empty_cart(db_session)
         
         return "Order placed successfully! Please find an invoice to proceed with payment in your inboxes."
