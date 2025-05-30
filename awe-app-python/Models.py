@@ -360,6 +360,24 @@ class Receipt(Base):
     #assumes that receipt is auto-generated upon payment, therefore the current date and time is used
     payment_dt = Column(DateTime, default=datetime.datetime.utcnow)
     
+class Payment(Base):
+    __tablename__ = 'payments'
+    id = Column(Integer, primary_key=True, autoincrement=True )
+    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
+    payment_method = Column(String(50), nullable=False)
+    total = Column(Integer, nullable=False)
+    
+    def process_payment(self, session):
+        if self.total != self.order.total:
+            raise ValueError("Mismatch in payment and order total")
+        
+        session.add(self)
+        session.commit()
+        
+        subject = OrderSubject(self.order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("IN PROCESS", session)
+            
 class OrderSubject:
     def __init__(self, order):
         self.order = order
@@ -374,7 +392,7 @@ class OrderSubject:
         db_session.commit()
         self.notify(old_status, new_status, db_session)
         
-    def notify(self, old_status, new_status, db_session):
+    def notify(self, old_status, new_status, db_session, payment):
         for observer in self._observers:
             observer.update(self.order, old_status, new_status, db_session)
         
@@ -384,7 +402,7 @@ class OrderObserver:
 
 #concrete observers   
 class InvoiceCreator(OrderObserver):
-    def update(self, order, old_status, new_status, db_session):
+    def update(self, order, old_status, new_status, db_session, payment):
         if new_status == 'PENDING':
             print(f"Creating invoice for Order #{order.id}")
             
@@ -394,15 +412,16 @@ class InvoiceCreator(OrderObserver):
         db_session.add(invoice)
         db_session.commit()
         
-#decide how to work out the receipt creator later, because don't know if we're going to use a payments table
-# class ReceiptCreator(OrderObserver):
-#     def update(self, order, old_status, new_status, db_session):
-#         if new_status == 'IN PROCESS':
-#             print(f"Creating receipt for Order #{order.id}")
+# decide how to work out the receipt creator later, because don't know if we're going to use a payments table
+class ReceiptCreator(OrderObserver):
+    def update(self, order, old_status, new_status, db_session, payment):
+        if new_status == 'IN PROCESS':
+            print(f"Creating receipt for Order #{order.id}")
         
-#         customer_id = order.customer_id
+        receipt = Receipt(order_id = order.id, customer_id = order.customer_id, payment_method= payment.payment_method, total = payment.total)
         
-#         receipt = Receipt(order_id = order.id, payment_id)
+        db_session.add(receipt)
+        db_session.commit()
         
             
             
