@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Product Manager</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="./home.html">🛍️ My Shop</a>
+            <div>
+                <a href="./cart.html" class="btn btn-outline-dark me-2">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                </a>
+                <a href="./login.html" class="btn btn-primary">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Product Manager Content -->
+    <div class="container mt-5">
+        <div class="card shadow-sm p-4">
+            <h3 class="mb-4">Manage Products</h3>
+
+            {% if products %}
+            <form method="POST" action="{{ url_for('productmanager') }}">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Category</th>
+                                <th>On Sale</th>
+                                <th>Discount Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <td>{{ product.id }}
+                                    <input type="hidden" name="product_id_{{ loop.index }}" value="{{ product.id }}">
+                                </td>
+                                <td><input type="text" class="form-control" name="name_{{ loop.index }}" value="{{ product.name }}"></td>
+                                <td><input type="text" class="form-control" name="description_{{ loop.index }}" value="{{ product.description }}"></td>
+                                <td><input type="number" step="0.01" class="form-control" name="price_{{ loop.index }}" value="{{ product.price }}"></td>
+                                <td><input type="number" class="form-control" name="stock_{{ loop.index }}" value="{{ product.stock }}"></td>
+                                <td>
+                                    <select class="form-select" name="category_{{ loop.index }}">
+                                        {% for cat in category_enum %}
+                                        <option value="{{ cat.name }}" {% if cat == product.category %}selected{% endif %}>{{ cat.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select" name="on_sale_{{ loop.index }}">
+                                        <option value="True" {% if product.on_sale %}selected{% endif %}>Yes</option>
+                                        <option value="False" {% if not product.on_sale %}selected{% endif %}>No</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.01" class="form-control" name="discount_{{ loop.index }}" value="{{ product.discount_percentage }}"></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success mt-3">Update Products</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="text-danger">No products found in the database.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

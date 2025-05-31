@@ -191,6 +191,14 @@ def checkout():
 
     
     return render_template('checkout.html', customer=customer, cart=cart)
+
+@app.route("/productmanager", methods=['POST', 'GET'])
+def productmanager():
+    catalogue = ProductCatalogue(db_session)
+    products = catalogue.get_all_products()
+    
+    return render_template('productmanager.html', products = products)
+    
     
     
     
