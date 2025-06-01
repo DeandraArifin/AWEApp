@@ -1,7 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template, flash
 from matplotlib.animation import subprocess_creation_flags
 from Models import *
-from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
 
