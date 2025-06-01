@@ -1,6 +1,6 @@
-from flask import Flask, session, request, redirect, url_for, render_template
+from flask import Flask, session, request, redirect, url_for, render_template, flash
 from matplotlib.animation import subprocess_creation_flags
-from Models import ProductCatalogue, engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory
+from Models import ProductCatalogue, engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory, ProductManager
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
@@ -192,12 +192,52 @@ def checkout():
     
     return render_template('checkout.html', customer=customer, cart=cart)
 
-@app.route("/productmanager", methods=['POST', 'GET'])
+@app.route("/productmanager", methods=["GET", "POST"])
 def productmanager():
-    catalogue = ProductCatalogue(db_session)
-    products = catalogue.get_all_products()
-    
-    return render_template('productmanager.html', products = products)
+    if request.method == "POST":
+        if 'username' in session:
+            account = db_session.query(Account).filter_by(username=session['username']).first()
+        
+        products = db_session.query(Product).all()
+        catalogue = ProductCatalogue(db_session)
+        product_manager = ProductManager(account, catalogue)
+        action = request.form.get("action")
+        
+        if action == 'update':
+        
+            for i, product in enumerate(products, start=1):
+                product_id = request.form.get(f"product_id_{i}")
+                if request.form.get(f"delete_{i}"):
+                    product_manager.remove_product(product_id, db_session)
+                    continue
+
+                product.name = request.form.get(f"name_{i}")
+                product.description = request.form.get(f"description_{i}")
+                product.price = float(request.form.get(f"price_{i}"))
+                product.stock = int(request.form.get(f"stock_{i}"))
+                product.category = ProductCategory[request.form.get(f"category_{i}")]
+                product.on_sale = request.form.get(f"on_sale_{i}") == "True"
+                product.discount_percentage = float(request.form.get(f"discount_{i}") or 0)
+
+        if action == 'add':  # if form was filled
+            
+            name=request.form.get("new_name")
+            description=request.form.get("new_description")
+            price=float(request.form.get("new_price"))
+            stock=int(request.form.get("new_stock"))
+            category=ProductCategory[request.form.get("new_category")]
+            on_sale=request.form.get("new_on_sale") == "True"
+            discount_percentage=float(request.form.get("new_discount") or 0)
+            
+            product_manager.add_product(name, description, price, stock, category, on_sale, discount_percentage, db_session)
+
+        db_session.commit()
+        flash("Catalog updated successfully.", "success")
+        return redirect(url_for("productmanager"))
+
+    products = db_session.query(Product).all()
+    return render_template("productmanager.html", products=products, category_enum=ProductCategory)
+
     
     
     

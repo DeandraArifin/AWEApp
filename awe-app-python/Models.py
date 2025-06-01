@@ -128,11 +128,14 @@ class Product(Base):
     on_sale = Column(Boolean, default=False, nullable=False )
     discount_percentage = Column(Integer, nullable=True, default=0)
     
-    def update_description(self, new_description):
-        if(new_description):
-            self.description = new_description
-        else:
-            raise ValueError("New description cannot be empty")
+    def __init__(self, name, description, price, stock, category, on_sale, discount_percentage):
+        self.name = name
+        self.description = description
+        self.price = price
+        self.stock = stock
+        self.category = category
+        self.on_sale = on_sale
+        self.discount_percentage = discount_percentage
     
     def get_stock(self):
         return self.stock
@@ -160,7 +163,7 @@ class ProductCatalogue():
     def search_by_category(self, category: ProductCategory):
         return self.session.query(Product).filter_by(category=ProductCategory[category]).all()
     
-    def search_by_price_range(self, min_price: float, max_price: float):
+    def sort_by_price_range(self, min_price: float, max_price: float):
         return self.session.query(Product).filter(
             Product.price >= min_price,
             Product.price <= max_price
@@ -433,8 +436,14 @@ class ProductManager:
         self.admin = admin
         self.catalogue = catalogue
     
-    def add_product(self, name, description, price, stock, category, on_sale, discount_percentage):
+    def add_product(self, name, description, price, stock, category, on_sale, discount_percentage, db_session):
         
+        for product in self.catalogue.get_all_products():
+            if product.name == name:
+                product.quantity += 1
+                db_session.commit()
+                return product
+            
         product = Product(name, description, price, stock, category, on_sale, discount_percentage)
         self.catalogue.add_product(product)
         
