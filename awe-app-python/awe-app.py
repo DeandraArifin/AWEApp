@@ -36,6 +36,8 @@ def home():
     catalogue = ProductCatalogue(db_session)
     if category and category in ProductCategory.__members__:
         filtered_products = catalogue.search_by_category(category)
+    elif category and category=='sale':
+        filtered_products = catalogue.get_sale_items()
     else:
         filtered_products = catalogue.get_all_products()
     
@@ -200,8 +202,9 @@ def productmanager():
         action = request.form.get("action")
         
         if action == 'update':
+            has_errors = False
         
-            for i, product in enumerate(products, start=1):
+            for i in range(1, len(products) + 1):
                 product_id = request.form.get(f"product_id_{i}")
                 if request.form.get(f"delete_{i}"):
                     product_manager.remove_product(product_id, db_session)
@@ -226,15 +229,16 @@ def productmanager():
                     on_sale=on_sale, 
                     discount_percentage=discount_percentage)
                 
+                
                 if error:
                     has_errors = True
                     flash(f"Product ID {product_id}: {error}", "danger")
                     
-                if not has_errors:
-                    db_session.commit()
-                    flash("Catalog updated successfully.", "success")
-                else:
-                    db_session.rollback()
+            if not has_errors:
+                db_session.commit()
+                flash("Catalog updated successfully.", "success")
+            else:
+                db_session.rollback()
 
         if action == 'add':  # if form was filled
             

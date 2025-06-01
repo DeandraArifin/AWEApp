@@ -169,6 +169,9 @@ class ProductCatalogue():
             Product.price <= max_price
         ).all()
         
+    def get_sale_items(self):
+        return self.session.query(Product).filter_by(on_sale=True)
+        
     def get_product_details(self, product_id:int):
         product = self.session.get(Product,product_id)
         if(product):
@@ -476,21 +479,21 @@ class ProductManager:
         if category:
             product.category = category
         
-        if on_sale and not discount_percentage:
-            return ("Discount Percentage not set")
-        if discount_percentage and not on_sale:
-            return ("Not set on sale")
+        if on_sale:
+            if discount_percentage == 0:
+                return "Discount Percentage not set for on-sale product"
+        else:
+            discount_percentage = 0  # ignore if sale not enabled
+
             
         if product.on_sale and not on_sale:
-            if product.discount_percentage:
+            if product.discount_percentage > 0:
                 product.price = product.price / (1 - product.discount_percentage / 100)
             product.discount_percentage = 0
             product.on_sale = False
-            
-        if on_sale and discount_percentage:
-            product.on_sale = on_sale
         
         elif discount_percentage and on_sale:
+            product.on_sale = True
             product.discount_percentage = discount_percentage
             sale_decorator = SaleDecorator(product)
             discounted_price = sale_decorator.get_price(discount_percentage, session)

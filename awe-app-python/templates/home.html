@@ -53,6 +53,7 @@
                             {{ cat.name.capitalize() }}
                         </option>
                         {% endfor %}
+                        <option value="sale">Sale</option>
                     </select>
                 </div>
                 <div class="col-auto">
@@ -71,6 +72,9 @@
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text">{{ product.description }}</p>
                         <p class="fw-bold">Price: ${{ product.price }}</p>
+                        {% if product.on_sale %}
+                            <p class="badge bg-danger text-white px-3 py-2 fs-6">{{ product.discount_percentage }}% OFF</p>
+                        {% endif %}
 
                         <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
                             <div class="input-group mb-2">

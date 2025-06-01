@@ -20,7 +20,9 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="{{url_for('admindashboard')}}">Dashboard</a>
             <div>
-                <a href="{{url_for('logout')}}" class="btn btn-primary">Logout</a>
+                <form method="POST" action="{{ url_for('logout') }}" style="display: inline;">
+                    <button type="submit" class="btn btn-primary">Logout</button>
+                </form>
             </div>
         </div>
     </nav>
