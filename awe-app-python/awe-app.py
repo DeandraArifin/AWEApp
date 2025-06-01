@@ -1,6 +1,6 @@
 from flask import Flask, session, request, redirect, url_for, render_template, flash
 from matplotlib.animation import subprocess_creation_flags
-from Models import ProductCatalogue, engine, Product, Customer, Account, Admin, Order, ShoppingCart, AccountType, CartItem, OrderStatus, ProductCategory, ProductManager
+from Models import *
 from AccountManager import AccountManager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
@@ -16,10 +16,6 @@ account_manager = AccountManager(db_session)
 admin_acc = Admin('CillianM', '123', 'Cillian Murphy', 'cillianm@gmail.com', AccountType.ADMIN, 120001)
 account_manager.register_admin('CillianM', '123', 'Cillian Murphy', 'cillianm@gmail.com', AccountType.ADMIN, 120001)
 print(admin_acc.employee_id)
-
-# myaccount = Account("Dea", "123", "Deandra Arifin","dea@gmail.com", AccountType.CUSTOMER)
-# account_manager.add_account(myaccount)
-# account_manager.register("Fawn", "123", "Fawn Pavano","fpavano@gmail.com", "tralala", "1234")
 
 def get_or_create_cart(db_session):
     if 'cart_id' in session:
@@ -211,13 +207,34 @@ def productmanager():
                     product_manager.remove_product(product_id, db_session)
                     continue
 
-                product.name = request.form.get(f"name_{i}")
-                product.description = request.form.get(f"description_{i}")
-                product.price = float(request.form.get(f"price_{i}"))
-                product.stock = int(request.form.get(f"stock_{i}"))
-                product.category = ProductCategory[request.form.get(f"category_{i}")]
-                product.on_sale = request.form.get(f"on_sale_{i}") == "True"
-                product.discount_percentage = float(request.form.get(f"discount_{i}") or 0)
+                name = request.form.get(f"name_{i}")
+                description = request.form.get(f"description_{i}")
+                price = float(request.form.get(f"price_{i}"))
+                stock = int(request.form.get(f"stock_{i}"))
+                category = ProductCategory[request.form.get(f"category_{i}")]
+                on_sale = request.form.get(f"on_sale_{i}") == "True"
+                discount_percentage = float(request.form.get(f"discount_{i}") or 0)
+                
+                error=product_manager.modify_product(
+                    session=db_session, 
+                    product_id=product_id, 
+                    name=name, 
+                    description=description, 
+                    price=price, 
+                    stock=stock, 
+                    category=category, 
+                    on_sale=on_sale, 
+                    discount_percentage=discount_percentage)
+                
+                if error:
+                    has_errors = True
+                    flash(f"Product ID {product_id}: {error}", "danger")
+                    
+                if not has_errors:
+                    db_session.commit()
+                    flash("Catalog updated successfully.", "success")
+                else:
+                    db_session.rollback()
 
         if action == 'add':  # if form was filled
             
@@ -230,9 +247,10 @@ def productmanager():
             discount_percentage=float(request.form.get("new_discount") or 0)
             
             product_manager.add_product(name, description, price, stock, category, on_sale, discount_percentage, db_session)
-
-        db_session.commit()
-        flash("Catalog updated successfully.", "success")
+        
+            db_session.commit()
+            flash("Catalog updated successfully.", "success")
+        
         return redirect(url_for("productmanager"))
 
     products = db_session.query(Product).all()

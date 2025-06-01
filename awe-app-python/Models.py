@@ -475,16 +475,29 @@ class ProductManager:
             product.stock = stock
         if category:
             product.category = category
-        if on_sale:
+        
+        if on_sale and not discount_percentage:
+            return ("Discount Percentage not set")
+        if discount_percentage and not on_sale:
+            return ("Not set on sale")
+            
+        if product.on_sale and not on_sale:
+            if product.discount_percentage:
+                product.price = product.price / (1 - product.discount_percentage / 100)
+            product.discount_percentage = 0
+            product.on_sale = False
+            
+        if on_sale and discount_percentage:
             product.on_sale = on_sale
-        if discount_percentage:
+        
+        elif discount_percentage and on_sale:
             product.discount_percentage = discount_percentage
             sale_decorator = SaleDecorator(product)
             discounted_price = sale_decorator.get_price(discount_percentage, session)
             product.price = discounted_price
             
         session.commit()
-        return product
+        return None
         
 
 
