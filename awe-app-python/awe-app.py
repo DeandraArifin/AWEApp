@@ -62,7 +62,7 @@ def login():
             return "Login failed", 401
     return render_template('login.html')
 
-@app.route("/logout", methods=['POST'])
+@app.route("/logout", methods=['POST', 'GET'])
 def logout():
     session.clear()
     return redirect(url_for('home'))
