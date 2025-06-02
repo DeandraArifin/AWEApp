@@ -259,10 +259,65 @@ def productmanager():
     products = db_session.query(Product).all()
     return render_template("productmanager.html", products=products, category_enum=ProductCategory)
 
-    
-    
-    
-    
+
+
+# payment routing
+@app.route("/payment", methods=['GET', 'POST'])
+def payment():
+    if request.method == 'POST':
+        selected_method = request.form.get('payment_method')
+        flash(f"Payment method '{selected_method}' selected. (This is a dummy page.)", "info")
+        return redirect(url_for('home'))
+
+    return render_template('payment.html')
+
+# invoice routing
+@app.route("/invoices")
+def invoices():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    account = db_session.query(Account).filter_by(username=session['username']).first()
+    if not isinstance(account, Customer):
+        return "Access Denied", 403
+
+    customer_orders = db_session.query(Order).filter_by(customer_id=account.id).all()
+    return render_template('invoices.html', orders=customer_orders)
+
+from flask import render_template, request, flash, redirect, url_for
+
+@app.route('/invoice/<int:order_id>', methods=['GET', 'POST'])
+def invoice_detail(order_id):
+    session = Session(bind=engine)
+    order = session.get(Order, order_id)  # SQLAlchemy 2.0 style
+
+    if not order:
+        flash("Invoice not found.", "danger")
+        return redirect(url_for('invoices'))
+
+    if request.method == 'POST':
+        payment_method = request.form.get('payment_method')
+
+        if payment_method:
+            # Strategy pattern
+            if payment_method == 'CREDITCARD':
+                strategy = CreditCardPayment()
+            elif payment_method == 'BANKTRANSFER':
+                strategy = BankTransferPayment()
+            else:
+                flash("Invalid payment method", "danger")
+                return redirect(url_for('invoice_detail', order_id=order.id))
+
+            strategy.process_payment(order, session)
+            return redirect(url_for('payment_confirmation', order_id=order.id))
+
+    return render_template('invoice_detail.html', order=order)
+
+# Payment confirmation routing
+@app.route('/invoice/<int:order_id>/confirmation')
+def payment_confirmation(order_id):
+    return render_template('payment_confirmation.html', order_id=order_id)
+
             
 if __name__ == "__main__":
     app.run(debug=False)

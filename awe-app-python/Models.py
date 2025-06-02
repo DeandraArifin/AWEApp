@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, Session
 from urllib.parse import quote_plus
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from abc import ABC, abstractmethod
 Base = declarative_base()
 
 original_password = '@Sunshine123'
@@ -551,6 +551,45 @@ class ProductManager:
         session.commit()
         return None
         
+class PaymentStrategy(ABC):
+    @abstractmethod
+    def process_payment(self, order, session):
+        pass
+
+class CreditCardPayment(PaymentStrategy):
+    def process_payment(self, order, session):
+        print(f"Processing credit card payment for Order #{order.id}")
+        receipt = Receipt(
+            order_id=order.id,
+            customer_id=order.customer_id,
+            payment_method=PaymentMethod.CREDITCARD,
+            payment_dt=datetime.datetime.utcnow(),
+            total=order.total
+        )
+        session.add(receipt)
+        session.commit()
+
+        subject = OrderSubject(order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("PROCESSING", session)
+
+class BankTransferPayment(PaymentStrategy):
+    def process_payment(self, order, session):
+        print(f"Processing bank transfer payment for Order #{order.id}")
+        receipt = Receipt(
+            order_id=order.id,
+            customer_id=order.customer_id,
+            payment_method=PaymentMethod.BANKTRANSFER,
+            payment_dt=datetime.datetime.utcnow(),
+            total=order.total
+        )
+        session.add(receipt)
+        session.commit()
+
+        subject = OrderSubject(order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("PROCESSING", session)
+
 
 
         
