@@ -286,19 +286,19 @@ class ShoppingCart(Base):
         return sum(item.calculate_subtotal() for item in self.items)
     
     def checkout(self, session, customer_id, full_name, email, shipping_address, phone_number):
+        
         #checks if cart is empty
         if not self.items:
-            raise ValueError("Cannot checkout an empty cart")
+            return ("Cannot checkout an empty cart")
     
         if not full_name or not email:
-            raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
+            return ("Guest checkout requires full_name and email") #implement input validation in UI too
         
         #checks if item is in stock
         for item in self.items:
             if item.quantity > item.product.stock:
-                raise ValueError("Not enough stock for {item.product.name}")
+                return (f"Not enough stock for {item.product.name}")
             
-        
         taxed_cart = TaxDecorator(self)
         taxed_total = taxed_cart.get_total()
         
@@ -332,7 +332,6 @@ class ShoppingCart(Base):
         
         
         session.commit()
-        return order
     
     def empty_cart(self, session):
         
