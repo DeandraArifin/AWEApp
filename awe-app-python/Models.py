@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, Session
 from urllib.parse import quote_plus
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
-from abc import ABC, abstractmethod
+
 Base = declarative_base()
 
 original_password = '@Sunshine123'
@@ -256,9 +256,14 @@ class ShoppingCart(Base):
         #check if the product is already a cart item in this cart
         for item in self.items:
             if item.product_id == product.id:
+                if item.quantity >= product.stock:
+                    raise ValueError("Not enough stock available")
                 item.quantity += 1
                 session.commit()
                 return
+        
+        if product.stock < 0:
+            raise ValueError("Item is out of stock")
         
         #if not, then it's added as a cart item
         self.items.append(CartItem(self, product))
@@ -288,6 +293,12 @@ class ShoppingCart(Base):
         if not full_name or not email:
             raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
         
+        #checks if item is in stock
+        for item in self.items:
+            if item.quantity > item.product.stock:
+                raise ValueError("Not enough stock for {item.product.name}")
+            
+        
         taxed_cart = TaxDecorator(self)
         taxed_total = taxed_cart.get_total()
         
@@ -308,13 +319,17 @@ class ShoppingCart(Base):
                 price = item.calculate_subtotal()
             )
             order.items.append(order_item)
+            
+            #stock management
+            item.product.quantity -= item.quantity
+            
         session.add(order)
         session.flush() #ensures order id is created
         
         order_subject = OrderSubject(order)
         order_subject.attach(InvoiceCreator())
         order_subject.set_status(OrderStatus.PENDING, session)
-            
+        
         
         session.commit()
         return order
@@ -550,46 +565,13 @@ class ProductManager:
             
         session.commit()
         return None
+    
+class SalesAnalytics(Base):
+    def __init__(self, session):
+        self.session = session
         
-class PaymentStrategy(ABC):
-    @abstractmethod
-    def process_payment(self, order, session):
-        pass
-
-class CreditCardPayment(PaymentStrategy):
-    def process_payment(self, order, session):
-        print(f"Processing credit card payment for Order #{order.id}")
-        receipt = Receipt(
-            order_id=order.id,
-            customer_id=order.customer_id,
-            payment_method=PaymentMethod.CREDITCARD,
-            payment_dt=datetime.datetime.utcnow(),
-            total=order.total
-        )
-        session.add(receipt)
-        session.commit()
-
-        subject = OrderSubject(order)
-        subject.attach(ReceiptCreator())
-        subject.set_status("PROCESSING", session)
-
-class BankTransferPayment(PaymentStrategy):
-    def process_payment(self, order, session):
-        print(f"Processing bank transfer payment for Order #{order.id}")
-        receipt = Receipt(
-            order_id=order.id,
-            customer_id=order.customer_id,
-            payment_method=PaymentMethod.BANKTRANSFER,
-            payment_dt=datetime.datetime.utcnow(),
-            total=order.total
-        )
-        session.add(receipt)
-        session.commit()
-
-        subject = OrderSubject(order)
-        subject.attach(ReceiptCreator())
-        subject.set_status("PROCESSING", session)
-
+    
+        
 
 
         
