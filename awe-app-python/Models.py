@@ -1,4 +1,5 @@
 from enum import Enum as PyEnum
+from enum import Enum
 import datetime
 from sre_constants import CATEGORY_LINEBREAK
 from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime, Boolean
@@ -176,7 +177,8 @@ class Product(Base):
     category = Column(Enum(ProductCategory), nullable=False)
     on_sale = Column(Boolean, default=False, nullable=False )
     discount_percentage = Column(Integer, nullable=True, default=0)
-    
+    image_url = Column(String(512), nullable=True)
+
     def __init__(self, name, description, price, stock, category, on_sale, discount_percentage):
         self.name = name
         self.description = description
@@ -185,6 +187,7 @@ class Product(Base):
         self.category = category
         self.on_sale = on_sale
         self.discount_percentage = discount_percentage
+        self.image_url = image_url
     
     def get_stock(self):
         return self.stock
@@ -232,6 +235,7 @@ class OrderStatus(PyEnum):
     PROCESSING = 'PROCESSING'
     SHIPPED = 'SHIPPED'
     DELIVERED = 'DELIVERED'
+    PAID = "PAID"
 
 class CartDecorator:
     def __init__(self, cart):
@@ -404,6 +408,8 @@ class Invoice(Base):
 class PaymentMethod(PyEnum):
     CREDITCARD = 'CREDITCARD'
     BANKTRANSFER = 'BANKTRANSFER'
+    PAYPAL = 'PAYPAL'
+    CASHONDELIVERY = 'CASHONDELIVERY'
 
 class Receipt(Base):
     __tablename__ = 'receipts'
@@ -442,11 +448,20 @@ class OrderSubject:
     def attach(self, observer):
         self._observers.append(observer)
     
-    def set_status(self, new_status, db_session):
+    # def set_status(self, new_status, db_session):
+    #     old_status = self.order.status
+    #     self.order.status = new_status
+    #     db_session.commit()
+    #     self.notify(old_status, new_status, db_session, None)
+
+    def set_status(self, new_status, db_session, payment=None):
+        if isinstance(new_status, str):
+            new_status = OrderStatus[new_status]  # convert string to enum
         old_status = self.order.status
         self.order.status = new_status
         db_session.commit()
-        self.notify(old_status, new_status, db_session, None)
+        self.notify(old_status, new_status, db_session, payment)
+
         
     def notify(self, old_status, new_status, db_session, payment):
         for observer in self._observers:
@@ -559,6 +574,7 @@ class PaymentStrategy(ABC):
 class CreditCardPayment(PaymentStrategy):
     def process_payment(self, order, session):
         print(f"Processing credit card payment for Order #{order.id}")
+        
         receipt = Receipt(
             order_id=order.id,
             customer_id=order.customer_id,
@@ -567,15 +583,18 @@ class CreditCardPayment(PaymentStrategy):
             total=order.total
         )
         session.add(receipt)
-        session.commit()
+        session.flush()
+
+   
 
         subject = OrderSubject(order)
         subject.attach(ReceiptCreator())
-        subject.set_status("PROCESSING", session)
+        subject.set_status("PROCESSING", session, receipt)
 
 class BankTransferPayment(PaymentStrategy):
     def process_payment(self, order, session):
         print(f"Processing bank transfer payment for Order #{order.id}")
+        
         receipt = Receipt(
             order_id=order.id,
             customer_id=order.customer_id,
@@ -584,14 +603,54 @@ class BankTransferPayment(PaymentStrategy):
             total=order.total
         )
         session.add(receipt)
-        session.commit()
+        session.flush()
+
+       
 
         subject = OrderSubject(order)
         subject.attach(ReceiptCreator())
-        subject.set_status("PROCESSING", session)
+        subject.set_status("PROCESSING", session, receipt)
+
+class PayPalPayment(PaymentStrategy):
+    def process_payment(self, order, session):
+        print(f"Processing PayPal payment for Order #{order.id}")
+        
+        receipt = Receipt(
+            order_id=order.id,
+            customer_id=order.customer_id,
+            payment_method=PaymentMethod.PAYPAL,
+            payment_dt=datetime.datetime.utcnow(),
+            total=order.total
+        )
+        session.add(receipt)
+        session.flush()
+
+        
+
+        subject = OrderSubject(order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("PROCESSING", session, receipt)
 
 
+class CashOnDeliveryPayment(PaymentStrategy):
+    def process_payment(self, order, session):
+        print(f"Processing cash on delivery payment for Order #{order.id}")
+        
+        receipt = Receipt(
+            order_id=order.id,
+            customer_id=order.customer_id,
+            payment_method=PaymentMethod.CASHONDELIVERY,
+            payment_dt=datetime.datetime.utcnow(),
+            total=order.total
+        )
+        session.add(receipt)
+        session.flush()
 
+        
+
+        subject = OrderSubject(order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("PROCESSING", session, receipt)
         
             
             

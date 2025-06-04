@@ -25,11 +25,11 @@
                     <i class="fas fa-shopping-cart"></i> Cart
                 </a>
                 {% if session.username %}
-                    <a href="{{url_for('customerdashboard')}}" class="homepage-dashboard-button">
+                <a href="{{url_for('customerdashboard')}}" class="homepage-dashboard-button">
                     <i class="fas fa-user"></i> Profile</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
                 {% else %}
-                    <a href="{{url_for('login')}}" class="btn btn-primary">Login</a>
+                <a href="{{url_for('login')}}" class="btn btn-primary">Login</a>
                 {%endif%}
             </div>
         </div>
@@ -49,7 +49,8 @@
                     <select id="category" name="category" class="form-select">
                         <option value="">All</option>
                         {% for cat in ProductCategory %}
-                        <option value="{{ cat.name }}" {% if cat.name == request.args.get('category') %}selected{% endif %}>
+                        <option value="{{ cat.name }}" {% if cat.name==request.args.get('category') %}selected{% endif
+                            %}>
                             {{ cat.name.capitalize() }}
                         </option>
                         {% endfor %}
@@ -61,21 +62,23 @@
                 </div>
             </div>
         </form>
-        
 
         {% if products %}
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for product in products %}
             <div class="col">
                 <div class="card h-100 shadow-sm">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}"
+                        style="height: 200px; object-fit: cover;">
+                    {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text">{{ product.description }}</p>
                         <p class="fw-bold">Price: ${{ product.price }}</p>
                         {% if product.on_sale %}
-                            <p class="badge bg-danger text-white px-3 py-2 fs-6">{{ product.discount_percentage }}% OFF</p>
+                        <p class="badge bg-danger text-white px-3 py-2 fs-6">{{ product.discount_percentage }}% OFF</p>
                         {% endif %}
-
                         <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
                             <div class="input-group mb-2">
                                 <button type="submit" class="btn btn-success">

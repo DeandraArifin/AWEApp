@@ -4,6 +4,7 @@ from Models import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
 
+
 Session = sessionmaker(bind=engine)
 db_session = Session()
 
@@ -85,15 +86,36 @@ def register():
     return render_template('register.html')
         
 
+# @app.route("/customerdashboard")
+# def customerdashboard():
+#     if 'username' not in session:
+#         return redirect(url_for('login'))
+    
+#     customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
+    
+    
+#     return render_template('customerdashboard.html', customer = customer_acc)
+
 @app.route("/customerdashboard")
 def customerdashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
-    
+    # Ensures only logged-in customers access the page.
+
+    # Queries each order's receipt and attaches it to the order object.
     customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
-    
-    
-    return render_template('customerdashboard.html', customer = customer_acc)
+
+    if not isinstance(customer_acc, Customer):
+        flash("Unauthorized access. Customer account required.", "danger")
+        return redirect(url_for('login'))
+
+    # Preload receipts for each order
+    for order in customer_acc.orders:
+        receipt = db_session.query(Receipt).filter_by(order_id=order.id).first()
+        order.receipt = receipt  # Attach receipt to order object
+
+    return render_template('customerdashboard.html', customer=customer_acc)
+
 
 @app.route("/admindashboard")
 def admindashboard():
@@ -288,8 +310,8 @@ from flask import render_template, request, flash, redirect, url_for
 
 @app.route('/invoice/<int:order_id>', methods=['GET', 'POST'])
 def invoice_detail(order_id):
-    session = Session(bind=engine)
-    order = session.get(Order, order_id)  # SQLAlchemy 2.0 style
+    session_db = Session(bind=engine)
+    order = session_db.get(Order, order_id)
 
     if not order:
         flash("Invoice not found.", "danger")
@@ -304,20 +326,60 @@ def invoice_detail(order_id):
                 strategy = CreditCardPayment()
             elif payment_method == 'BANKTRANSFER':
                 strategy = BankTransferPayment()
+            elif payment_method == 'PAYPAL':
+                strategy = PayPalPayment()
+            elif payment_method == 'CASH':
+                strategy = CashOnDeliveryPayment()
             else:
                 flash("Invalid payment method", "danger")
                 return redirect(url_for('invoice_detail', order_id=order.id))
 
-            strategy.process_payment(order, session)
+            strategy.process_payment(order, session_db)
+
+            # ✅ Set status to PAID
+            order.status = OrderStatus.PAID
+            session_db.commit()
+
             return redirect(url_for('payment_confirmation', order_id=order.id))
 
     return render_template('invoice_detail.html', order=order)
 
 # Payment confirmation routing
+# Payment confirmation routing
 @app.route('/invoice/<int:order_id>/confirmation')
 def payment_confirmation(order_id):
-    return render_template('payment_confirmation.html', order_id=order_id)
+    session = Session(bind=engine)
 
-            
+    try:
+        order = session.get(Order, order_id)
+        invoice = session.query(Invoice).filter_by(order_id=order_id).first()
+
+        if not order or not invoice:
+            flash("Order or Invoice not found for confirmation", "danger")
+            return redirect(url_for('invoices'))
+
+        # Optional: flash a success message
+        flash(f"Payment for Order #{order.id} was successful.", "success")
+
+        return render_template('payment_confirmation.html', order=order, invoice=invoice)
+
+    finally:
+        session.close()
+# Receipt routing
+@app.route('/receipt/<int:order_id>')
+def view_receipt(order_id):
+    session_db = Session(bind=engine)
+    try:
+        order = session_db.get(Order, order_id)
+        receipt = session_db.query(Receipt).filter_by(order_id=order_id).first()
+
+        if not order or not receipt:
+            flash("Receipt not found.", "danger")
+            return redirect(url_for('customerdashboard'))
+
+        return render_template('receipt.html', order=order, receipt=receipt)
+    finally:
+        session_db.close()
+           
 if __name__ == "__main__":
     app.run(debug=False)
