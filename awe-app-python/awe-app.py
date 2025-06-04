@@ -203,12 +203,16 @@ def checkout():
         email = request.form['email']
         phone_number = request.form['phone_number']
         shipping_address = request.form['address']
-        order = cart.checkout(db_session, customer.id if customer else None, full_name, email, shipping_address, phone_number)
-        cart.empty_cart(db_session)
+        error = cart.checkout(db_session, customer.id if customer else None, full_name, email, shipping_address, phone_number)
+        if error:
+            flash(f"{error}", "danger")
+            return redirect(url_for("checkout"))
         
-        return "Order placed successfully! Please find an invoice to proceed with payment in your inboxes."
+        
+        cart.empty_cart(db_session)
+        flash("Order placed successfully! Please find an invoice to proceed with payment in your inboxes.", "success")
+        return redirect(url_for("checkout.html"))
 
-    
     return render_template('checkout.html', customer=customer, cart=cart)
 
 @app.route("/productmanager", methods=["GET", "POST"])

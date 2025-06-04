@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, Session
 from urllib.parse import quote_plus
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
-from abc import ABC, abstractmethod
+
 Base = declarative_base()
 
 original_password = '@Sunshine123'
@@ -260,9 +260,14 @@ class ShoppingCart(Base):
         #check if the product is already a cart item in this cart
         for item in self.items:
             if item.product_id == product.id:
+                if item.quantity >= product.stock:
+                    raise ValueError("Not enough stock available")
                 item.quantity += 1
                 session.commit()
                 return
+        
+        if product.stock < 0:
+            raise ValueError("Item is out of stock")
         
         #if not, then it's added as a cart item
         self.items.append(CartItem(self, product))
@@ -285,13 +290,19 @@ class ShoppingCart(Base):
         return sum(item.calculate_subtotal() for item in self.items)
     
     def checkout(self, session, customer_id, full_name, email, shipping_address, phone_number):
+        
         #checks if cart is empty
         if not self.items:
-            raise ValueError("Cannot checkout an empty cart")
+            return ("Cannot checkout an empty cart")
     
         if not full_name or not email:
-            raise ValueError("Guest checkout requires full_name and email") #implement input validation in UI too
+            return ("Guest checkout requires full_name and email") #implement input validation in UI too
         
+        #checks if item is in stock
+        for item in self.items:
+            if item.quantity > item.product.stock:
+                return (f"Not enough stock for {item.product.name}")
+            
         taxed_cart = TaxDecorator(self)
         taxed_total = taxed_cart.get_total()
         
@@ -312,16 +323,19 @@ class ShoppingCart(Base):
                 price = item.calculate_subtotal()
             )
             order.items.append(order_item)
+            
+            #stock management
+            item.product.quantity -= item.quantity
+            
         session.add(order)
         session.flush() #ensures order id is created
         
         order_subject = OrderSubject(order)
         order_subject.attach(InvoiceCreator())
         order_subject.set_status(OrderStatus.PENDING, session)
-            
+        
         
         session.commit()
-        return order
     
     def empty_cart(self, session):
         
