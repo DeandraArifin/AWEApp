@@ -179,7 +179,7 @@ class Product(Base):
     discount_percentage = Column(Integer, nullable=True, default=0)
     image_url = Column(String(512), nullable=True)
 
-    def __init__(self, name, description, price, stock, category, on_sale, discount_percentage):
+    def __init__(self, name, description, price, stock, category, on_sale, discount_percentage, image_url):
         self.name = name
         self.description = description
         self.price = price
