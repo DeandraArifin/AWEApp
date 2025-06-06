@@ -43,15 +43,17 @@
         {% if orders %}
         <ul class="list-group shadow-sm">
             {% for order in orders %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>Invoice #{{ order.id }}</strong><br>
-                    <!-- <small>Status: <span class="badge bg-secondary">{{ order.status.name }}</span></small> -->
-                </div>
-                <a href="{{ url_for('invoice_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-eye"></i> View & Pay
-                </a>
-            </li>
+                {% if order.status.value|string == "PENDING"%}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Invoice #{{ order.id }}</strong><br>
+                        <!-- <small>Status: <span class="badge bg-secondary">{{ order.status.name }}</span></small> -->
+                    </div>
+                    <a href="{{ url_for('invoice_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> View & Pay
+                    </a>
+                </li>
+                {%endif%}
             {% endfor %}
         </ul>
         {% else %}
