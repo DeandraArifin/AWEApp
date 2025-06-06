@@ -211,7 +211,7 @@ def checkout():
         
         cart.empty_cart(db_session)
         flash("Order placed successfully! Please find an invoice to proceed with payment in your inboxes.", "success")
-        return redirect(url_for("checkout.html"))
+        return redirect(url_for("checkout"))
 
     return render_template('checkout.html', customer=customer, cart=cart)
 
