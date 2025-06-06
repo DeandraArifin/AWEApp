@@ -391,7 +391,7 @@ class Order(Base):
     email = Column(String(255), nullable=False)
     phone_number = Column(Integer, nullable=False)
     shipping_address = Column(String(255), nullable=False)
-    status = Column(Enum(OrderStatus), nullable=False)
+    status = Column(Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     total = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
@@ -437,24 +437,7 @@ class Receipt(Base):
     #assumes that receipt is auto-generated upon payment, therefore the current date and time is used
     payment_dt = Column(DateTime, default=datetime.datetime.utcnow)
     total = Column(Float, nullable=False)
-    
-class Payment(Base):
-    __tablename__ = 'payments'
-    id = Column(Integer, primary_key=True, autoincrement=True )
-    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    payment_method = Column(String(50), nullable=False)
-    total = Column(Integer, nullable=False)
-    
-    def process_payment(self, session):
-        if self.total != self.order.total:
-            raise ValueError("Mismatch in payment and order total")
-        
-        session.add(self)
-        session.commit()
-        
-        subject = OrderSubject(self.order)
-        subject.attach(ReceiptCreator())
-        subject.set_status("PROCESSING", session)
+
             
 class OrderSubject:
     def __init__(self, order):
@@ -486,6 +469,24 @@ class OrderSubject:
 class OrderObserver:
     def update(self, order, old_status, new_status, db_session, payment):
         raise NotImplementedError
+
+class Payment(Base):
+    __tablename__ = 'payments'
+    id = Column(Integer, primary_key=True, autoincrement=True )
+    order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
+    payment_method = Column(String(50), nullable=False)
+    total = Column(Integer, nullable=False)
+    
+    def process_payment(self, session):
+        if self.total != self.order.total:
+            raise ValueError("Mismatch in payment and order total")
+        
+        session.add(self)
+        session.commit()
+        
+        subject = OrderSubject(self.order)
+        subject.attach(ReceiptCreator())
+        subject.set_status("PROCESSING", session)
 
 #concrete observers   
 class InvoiceCreator(OrderObserver):

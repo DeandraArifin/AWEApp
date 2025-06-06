@@ -1,7 +1,7 @@
 from flask import Flask, session, request, redirect, url_for, render_template, flash
 from matplotlib.animation import subprocess_creation_flags
 from Models import *
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from sqlalchemy import and_
 from datetime import datetime
 
@@ -86,15 +86,6 @@ def register():
     return render_template('register.html')
         
 
-# @app.route("/customerdashboard")
-# def customerdashboard():
-#     if 'username' not in session:
-#         return redirect(url_for('login'))
-    
-#     customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
-    
-    
-#     return render_template('customerdashboard.html', customer = customer_acc)
 
 @app.route("/customerdashboard")
 def customerdashboard():
@@ -103,14 +94,19 @@ def customerdashboard():
     # Ensures only logged-in customers access the page.
 
     # Queries each order's receipt and attaches it to the order object.
-    customer_acc = db_session.query(Account).filter_by(username=session['username']).first()
-
+    customer_acc = (
+    db_session.query(Customer)
+    .options(joinedload(Customer.orders))
+    .filter_by(username=session['username'])
+    .first()
+    )
     if not isinstance(customer_acc, Customer):
         flash("Unauthorized access. Customer account required.", "danger")
         return redirect(url_for('login'))
 
     # Preload receipts for each order
     for order in customer_acc.orders:
+        db_session.refresh(order)
         receipt = db_session.query(Receipt).filter_by(order_id=order.id).first()
         order.receipt = receipt  # Attach receipt to order object
 
