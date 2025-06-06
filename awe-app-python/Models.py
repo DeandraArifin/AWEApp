@@ -327,7 +327,7 @@ class ShoppingCart(Base):
             order.items.append(order_item)
             
             #stock management
-            item.product.quantity -= item.quantity
+            item.product.stock -= item.quantity
             
         session.add(order)
         session.flush() #ensures order id is created
