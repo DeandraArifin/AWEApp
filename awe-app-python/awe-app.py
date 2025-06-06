@@ -301,8 +301,9 @@ def productmanager():
             category=ProductCategory[request.form.get("new_category")]
             on_sale=request.form.get("new_on_sale") == "True"
             discount_percentage=float(request.form.get("new_discount") or 0)
+            image_url = request.form.get("new_image_url")
             
-            product_manager.add_product(name, description, price, stock, category, on_sale, discount_percentage, db_session)
+            product_manager.add_product(name, description, price, stock, category, on_sale, discount_percentage, image_url, db_session)
         
             db_session.commit()
             flash("Catalog updated successfully.", "success")

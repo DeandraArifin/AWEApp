@@ -522,7 +522,7 @@ class ProductManager:
         self.admin = admin
         self.catalogue = catalogue
     
-    def add_product(self, name, description, price, stock, category, on_sale, discount_percentage, db_session):
+    def add_product(self, name, description, price, stock, category, on_sale, discount_percentage, image_url, db_session):
         
         for product in self.catalogue.get_all_products():
             if product.name == name:
@@ -530,7 +530,7 @@ class ProductManager:
                 db_session.commit()
                 return product
             
-        product = Product(name, description, price, stock, category, on_sale, discount_percentage)
+        product = Product(name, description, price, stock, category, on_sale, discount_percentage, image_url)
         self.catalogue.add_product(product)
         
         return product
