@@ -40,35 +40,47 @@ def add_header(response):
 
 @app.route("/")
 def home():
-    category = request.args.get('category')
-    catalogue = ProductCatalogue(db_session)
-    if category and category in ProductCategory.__members__:
-        filtered_products = catalogue.search_by_category(category)
-    elif category and category=='sale':
-        filtered_products = catalogue.get_sale_items()
-    else:
-        filtered_products = catalogue.get_all_products()
-    
-    return render_template('home.html', products=filtered_products, ProductCategory=ProductCategory, request=request)
+    try: 
+        category = request.args.get('category')
+        catalogue = ProductCatalogue(db_session)
+        if category and category in ProductCategory.__members__:
+            filtered_products = catalogue.search_by_category(category)
+        elif category and category=='sale':
+            filtered_products = catalogue.get_sale_items()
+        else:
+            filtered_products = catalogue.get_all_products()
+        
+        return render_template('home.html', products=filtered_products, ProductCategory=ProductCategory, request=request)
+    except Exception as e:
+        print("[ERROR] Exception in home route:", e)
+        import traceback
+        traceback.print_exc()
+        db_session.rollback() 
+        return "Internal Server Error", 500
 
 
 @app.route("/login", methods=['GET','POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        account = account_manager.login(username, password)
-        
-        if (account != None and isinstance(account, Customer)):
-            session['username'] = username
-            return redirect(url_for('customerdashboard'))
-        
-        elif (account != None and isinstance(account, Admin)):
-            session['username'] = username
-            return redirect(url_for('admindashboard'))
-        else:
-            return "Login failed", 401
-    return render_template('login.html')
+    try:
+        if request.method == 'POST':
+            username = request.form['username']
+            password = request.form['password']
+            account = account_manager.login(username, password)
+            
+            if (account != None and isinstance(account, Customer)):
+                session['username'] = username
+                return redirect(url_for('customerdashboard'))
+            
+            elif (account != None and isinstance(account, Admin)):
+                session['username'] = username
+                return redirect(url_for('admindashboard'))
+            else:
+                return "Login failed", 401
+        return render_template('login.html')
+    except Exception as e:
+        db_session.rollback()  
+        print(f"[LOGIN ERROR]: {e}")
+        return None
 
 @app.route("/logout", methods=['POST', 'GET'])
 def logout():
