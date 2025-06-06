@@ -238,6 +238,7 @@ class OrderStatus(PyEnum):
     SHIPPED = 'SHIPPED'
     DELIVERED = 'DELIVERED'
 
+
 class CartDecorator:
     def __init__(self, cart):
         self._cart = cart
@@ -262,17 +263,19 @@ class ShoppingCart(Base):
         for item in self.items:
             if item.product_id == product.id:
                 if item.quantity >= product.stock:
-                    raise ValueError("Not enough stock available")
+                    return ("Not enough stock available")
                 item.quantity += 1
                 session.commit()
                 return
         
         if product.stock < 0:
-            raise ValueError("Item is out of stock")
+            return ("Item is out of stock")
         
         #if not, then it's added as a cart item
-        self.items.append(CartItem(self, product))
-    
+        new_item = CartItem(cart=self, product=product)
+        session.add(new_item)
+        session.commit()
+
     def reduce_item_quantity(self, product: Product, session: Session):
         
         for item in self.items:

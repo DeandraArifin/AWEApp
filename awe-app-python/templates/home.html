@@ -80,6 +80,19 @@
                         {% if product.on_sale %}
                         <p class="badge bg-danger text-white px-3 py-2 fs-6">{{ product.discount_percentage }}% OFF</p>
                         {% endif %}
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, full_message in messages %}
+                                    {% set parts = full_message.split('|', 1) %}
+                                    {% if parts[0]|int == product.id %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show mt-2" role="alert">
+                                            {{ parts[1] }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
                         <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
                             <div class="input-group mb-2">
                                 <button type="submit" class="btn btn-success">
@@ -96,6 +109,7 @@
         <p>No products available.</p>
         {% endif %}
     </div>
+    
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"

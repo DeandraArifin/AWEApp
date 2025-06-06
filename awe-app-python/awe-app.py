@@ -182,25 +182,34 @@ def update_cart(item_id):
     cart_item = db_session.query(CartItem).filter_by(id=item_id).first()
     cart = get_or_create_cart(db_session)
     
-    if cart_item:
+    if cart_item and cart_item.product:
+        product = cart_item.product
         if action == 'increase':
-            cart.add_item_quantity(cart_item, db_session)
+            error = cart.add_item_quantity(product, db_session)
+           
+            if error:
+                flash((product.id, error), "cart_error")
+
         elif action == 'decrease':
-            cart.reduce_item_quantity(cart_item, db_session)
-            
+            cart.reduce_item_quantity(product, db_session)
+
     return redirect(url_for('view_cart'))
+
 
 @app.route("/add_to_cart/<int:product_id>", methods=['POST'])
 def add_to_cart(product_id):
-    quantity = int(request.form.get("quantity", 1))
+    # quantity = int(request.form.get("quantity", 1))
     
-    product = db_session.query(Product).get(product_id)
+    product = db_session.query(Product).filter_by(id=product_id).first()
     if not product:
         return "Product not found"
     
     cart = get_or_create_cart(db_session)
     
-    cart.add_item_quantity(product, db_session)
+    error = cart.add_item_quantity(product, db_session)
+    if error:
+        flash(f"{product.id}|{error}", "warning")
+
     
     return redirect(url_for('home'))
 

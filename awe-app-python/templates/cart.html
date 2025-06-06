@@ -70,6 +70,21 @@
                                 </div>
                             </td>
                         </tr>
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% for category, message in messages %}
+                                    {% if category == 'cart_error' and message[0] == item.product.id %}
+                                        <tr>
+                                            <td colspan="4">
+                                                <div class="alert alert-warning alert-dismissible fade show mt-2 mb-0" role="alert">
+                                                    {{ message[1] }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                    
                         {% endfor %}
                     </tbody>
                 </table>
