@@ -41,11 +41,11 @@
 
             <div class="mb-4 border rounded p-3 bg-white">
                 <div class="row mb-2">
-                    <div class="col-sm-4"><strong>🧾 Receipt ID:</strong></div>
+                    <div class="col-sm-4"><strong>Receipt ID:</strong></div>
                     <div class="col-sm-8">{{ receipt.id }}</div>
                 </div>
                 <div class="row mb-2">
-                    <div class="col-sm-4"><strong>📦 Order ID:</strong></div>
+                    <div class="col-sm-4"><strong>Order ID:</strong></div>
                     <div class="col-sm-8">{{ order.id }}</div>
                 </div>
                 <div class="row mb-2">
@@ -53,15 +53,15 @@
                     <div class="col-sm-8">{{ order.full_name }}</div>
                 </div>
                 <div class="row mb-2">
-                    <div class="col-sm-4"><strong>💳 Payment Method:</strong></div>
+                    <div class="col-sm-4"><strong>Payment Method:</strong></div>
                     <div class="col-sm-8">{{ receipt.payment_method.value }}</div>
                 </div>
                 <div class="row mb-2">
-                    <div class="col-sm-4"><strong>💰 Amount:</strong></div>
+                    <div class="col-sm-4"><strong>Amount:</strong></div>
                     <div class="col-sm-8 text-success fw-bold">${{ '%.2f'|format(receipt.total) }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-4"><strong>📅 Payment Date:</strong></div>
+                    <div class="col-sm-4"><strong>Payment Date:</strong></div>
                     <div class="col-sm-8">{{ receipt.payment_dt.strftime('%Y-%m-%d %H:%M:%S') }}</div>
                 </div>
             </div>

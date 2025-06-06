@@ -3,7 +3,7 @@ from matplotlib.animation import subprocess_creation_flags
 from Models import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import and_
-
+from datetime import datetime
 
 Session = sessionmaker(bind=engine)
 db_session = Session()
@@ -338,12 +338,25 @@ def invoice_detail(order_id):
                 flash("Invalid payment method", "danger")
                 return redirect(url_for('invoice_detail', order_id=order.id))
 
+            # Process payment
             strategy.process_payment(order, session_db)
 
-            # ✅ Set status to PAID
+            # ✅ Set order status to PAID
             order.status = OrderStatus.PAID
+
+            # ✅ Create Receipt
+            receipt = Receipt(
+                order_id=order.id,
+                payment_method=PaymentMethod[payment_method],
+                total=order.total,
+                payment_dt=datetime.utcnow()
+            )
+            session_db.add(receipt)
+
+            # ✅ Commit all changes
             session_db.commit()
 
+            # ✅ Redirect to confirmation page
             return redirect(url_for('payment_confirmation', order_id=order.id))
 
     return render_template('invoice_detail.html', order=order)
