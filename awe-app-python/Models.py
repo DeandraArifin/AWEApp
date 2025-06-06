@@ -1,5 +1,6 @@
 from enum import Enum as PyEnum
 from enum import Enum
+from abc import ABC, abstractmethod
 import datetime
 from sre_constants import CATEGORY_LINEBREAK
 from sqlalchemy import create_engine, Float, Column, Integer, String, Enum, ForeignKey, null, UniqueConstraint, DateTime, Boolean
