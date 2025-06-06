@@ -30,6 +30,14 @@ def get_or_create_cart(db_session):
     session['cart_id'] = cart.id
     return cart
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 @app.route("/")
 def home():
     category = request.args.get('category')
@@ -91,26 +99,28 @@ def register():
 def customerdashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
-    # Ensures only logged-in customers access the page.
 
-    # Queries each order's receipt and attaches it to the order object.
-    customer_acc = (
-    db_session.query(Customer)
-    .options(joinedload(Customer.orders))
-    .filter_by(username=session['username'])
-    .first()
-    )
+    customer_acc = db_session.query(Customer).filter_by(username=session['username']).first()
+
     if not isinstance(customer_acc, Customer):
         flash("Unauthorized access. Customer account required.", "danger")
         return redirect(url_for('login'))
 
-    # Preload receipts for each order
-    for order in customer_acc.orders:
+    # Explicitly reload orders from the database, fresh
+    orders = (
+        db_session.query(Order)
+        .filter_by(customer_id=customer_acc.id)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+
+    for order in orders:
         db_session.refresh(order)
         receipt = db_session.query(Receipt).filter_by(order_id=order.id).first()
-        order.receipt = receipt  # Attach receipt to order object
+        order.receipt = receipt
 
-    return render_template('customerdashboard.html', customer=customer_acc)
+    return render_template('customerdashboard.html', customer=customer_acc, orders=orders)
+
 
 
 @app.route("/admindashboard")
@@ -388,4 +398,4 @@ def view_receipt(order_id):
         session_db.close()
            
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False, use_reloader = True)
