@@ -334,13 +334,8 @@ def invoice_detail(order_id):
                 flash("Invalid payment method", "danger")
                 return redirect(url_for('invoice_detail', order_id=order.id))
 
-            # Process payment
             strategy.process_payment(order, session_db)
 
-            # ✅ Set order status to PAID
-            order.status = OrderStatus.PAID
-
-            # ✅ Create Receipt
             receipt = Receipt(
                 order_id=order.id,
                 payment_method=PaymentMethod[payment_method],
@@ -349,10 +344,8 @@ def invoice_detail(order_id):
             )
             session_db.add(receipt)
 
-            # ✅ Commit all changes
             session_db.commit()
 
-            # ✅ Redirect to confirmation page
             return redirect(url_for('payment_confirmation', order_id=order.id))
 
     return render_template('invoice_detail.html', order=order)

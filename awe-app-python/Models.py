@@ -237,7 +237,6 @@ class OrderStatus(PyEnum):
     PROCESSING = 'PROCESSING'
     SHIPPED = 'SHIPPED'
     DELIVERED = 'DELIVERED'
-    PAID = "PAID"
 
 class CartDecorator:
     def __init__(self, cart):
