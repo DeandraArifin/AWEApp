@@ -69,8 +69,9 @@
             <div class="col">
                 <div class="card h-100 shadow-sm">
                     {% if product.image_url %}
-                    <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}"
-                        style="height: 200px; object-fit: cover;">
+                    <img src="{{ url_for('static', filename='images/' + product.image_url.split('/')[-1]) }}"
+                        class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ product.name }}</h5>
